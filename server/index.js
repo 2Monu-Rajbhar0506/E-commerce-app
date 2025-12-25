@@ -10,6 +10,7 @@ import categoryRouter from "./routes/CategoryRoutes.js";
 import uploadRouter from "./routes/uploadRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import subCategoryRouter from "./routes/SubCategoryRoutes.js";
+import productRouter from "./routes/productRouter.js";
 
 dotenv.config();
 
@@ -53,8 +54,9 @@ app.get("/", (request, response) => {
 app.use(errorHandler);
 app.use("/api/user", userRouter);
 app.use("/api/category", categoryRouter);
-app.use("/api/file",uploadRouter)
+app.use("/api/file", uploadRouter);
 app.use("/api/subcategory", subCategoryRouter);
+app.use("/api/product", productRouter);
 
 connectDB().then(() => {
     app.listen(PORT, () => {

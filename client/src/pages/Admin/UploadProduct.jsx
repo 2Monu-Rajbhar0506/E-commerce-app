@@ -478,7 +478,7 @@ export default UploadProduct*/
 
 
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MdCloudUpload, MdDelete } from "react-icons/md";
 import { IoIosClose } from "react-icons/io";
 import { useSelector } from "react-redux";
@@ -488,6 +488,9 @@ import Loader from "../../components/Loader";
 import AxiosToastError from "../../utils/AxiosToastError";
 import ViewImage1 from "../../components/ViewImage1";
 import AddFieldComponent from "../../components/Admin/AddFieldComponent";
+import api from "../../utils/Axios";
+import SummaryApi from "../../common/summaryApi";
+import successAlert from "../../utils/SuccessAlert";
 
 const UploadProduct = () => {
   const [data, setData] = useState({
@@ -513,6 +516,7 @@ const UploadProduct = () => {
 
   const [imageLoading, setImageLoading] = useState(false);
   const [viewImageUrl, setViewImageUrl] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // ---------------- Handlers ----------------
 
@@ -624,9 +628,56 @@ const UploadProduct = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("FINAL PRODUCT DATA:", data);
+  // useEffect(() => {
+  //   successAlert("Product uploaded")
+  // }, []);
+
+  const handleSubmit = async(e) => {
+     e.preventDefault();
+    // console.log("FINAL PRODUCT DATA:", data);
+
+    if (loading) return; //prevent the multiple submits
+    
+    setLoading(true);
+
+
+    try {
+      const payload = {
+        ...data,
+        category: data.category.map((c) => c._id),
+        subCategory: data.subCategory.map((s) => s._id),
+     }
+
+
+      const response = await api({
+        ...SummaryApi.createProduct,
+        data: payload,
+      });
+
+      const { data: responseData } = response;
+
+      if (responseData.success) {
+        successAlert(responseData.message)
+
+
+        setData({
+          name: "",
+          image: [],
+          category: [],
+          subCategory: [],
+          unit: "",
+          stock: "",
+          price: "",
+          discount: "",
+          description: "",
+          more_details: {},
+        });
+      }
+    } catch (error) {
+      AxiosToastError(error)
+    } finally {
+      setLoading(false);  //finally will always stop the loader
+    }
   };
 
   const removeField = (key) => {
@@ -641,6 +692,7 @@ const UploadProduct = () => {
     })
   };
 
+  
   // ---------------- UI ----------------
 
   return (
@@ -658,7 +710,9 @@ const UploadProduct = () => {
           <form className="grid gap-6" onSubmit={handleSubmit}>
             {/* PRODUCT NAME */}
             <div>
-              <label htmlFor="name" className="font-medium text-gray-700">Product Name</label>
+              <label htmlFor="name" className="font-medium text-gray-700">
+                Product Name
+              </label>
               <input
                 id="name"
                 type="text"
@@ -673,7 +727,12 @@ const UploadProduct = () => {
 
             {/* DESCRIPTION */}
             <div>
-              <label htmlFor="description" className="font-medium text-gray-700">Description</label>
+              <label
+                htmlFor="description"
+                className="font-medium text-gray-700"
+              >
+                Description
+              </label>
               <textarea
                 id="description"
                 name="description"
@@ -755,7 +814,7 @@ const UploadProduct = () => {
               <div className="flex flex-wrap gap-2 mt-2">
                 {data.category.map((c, index) => (
                   <div
-                    key={index+1}
+                    key={index + 1}
                     className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
                   >
                     {c.name}
@@ -788,7 +847,7 @@ const UploadProduct = () => {
               <div className="flex flex-wrap gap-2 mt-2">
                 {data.subCategory.map((s, index) => (
                   <div
-                    key={index+1}
+                    key={index + 1}
                     className="flex items-center gap-1 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm"
                   >
                     {s.name}
@@ -806,7 +865,9 @@ const UploadProduct = () => {
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               {/* STOCK */}
               <div>
-                <label htmlFor="stock" className="font-medium text-gray-700">Stock</label>
+                <label htmlFor="stock" className="font-medium text-gray-700">
+                  Stock
+                </label>
                 <input
                   id="stock"
                   type="number"
@@ -820,7 +881,9 @@ const UploadProduct = () => {
 
               {/* PRICE */}
               <div>
-                <label htmlFor="Number" className="font-medium text-gray-700">Price (₹)</label>
+                <label htmlFor="Number" className="font-medium text-gray-700">
+                  Price (₹)
+                </label>
                 <input
                   id="Number"
                   type="number"
@@ -834,7 +897,9 @@ const UploadProduct = () => {
 
               {/**UNIT */}
               <div>
-                <label htmlFor="Unit" className="font-medium text-gray-700">Unit</label>
+                <label htmlFor="Unit" className="font-medium text-gray-700">
+                  Unit
+                </label>
                 <input
                   id="Unit"
                   type="text"
@@ -902,9 +967,10 @@ const UploadProduct = () => {
             {/* SUBMIT BUTTON */}
             <button
               type="submit"
-              className="w-full py-2.5 bg-primary-200 text-white font-semibold rounded-lg hover:bg-primary-100 transition"
+              disabled={loading}
+              className={`w-full py-2.5 rounded-lg font-semibold text-white transition ${loading ? "bg-gray-400 cursor-not-allowed": "bg-primary-200 hover:bg-primary-100"}`}
             >
-              Submit
+              {loading ? "Processing..." : "Submit"}
             </button>
           </form>
         </div>

@@ -22,6 +22,71 @@ export const validateRequest = (schema) => (req, res, next) => {
   }
 };
 
+/*export const validate = (schema) => async (req, res, next) => {
+  try {
+    await schema.parseAsync({
+      body: req.body,
+      params: req.params,
+      query: req.query,
+    });
+    next();
+  } catch (error) {
+     if (error instanceof z.ZodError) {
+       return res.status(400).json({
+         message: "Validation failed....",
+         errors: error.errors,
+         error: true,
+         success: false,
+       });
+     }
+
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors: error.errors,
+    });
+  }
+};*/
+
+
+export const validate = (schema) => async (req, res, next) => {
+  try {
+    await schema.parseAsync({
+      body: req.body,
+      params: req.params,
+      query: req.query,
+    });
+
+    next();
+  } catch (error) {
+    // 🔴 Zod validation error
+    if (error instanceof z.ZodError) {
+      const formattedErrors = error.errors.map((err) => ({
+        location: err.path[0], // body | query | params
+        field: err.path.slice(1).join("."), // actual field name
+        message: err.message,
+      }));
+
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: formattedErrors,
+      });
+    }
+
+    // 🔴 Unexpected error
+    console.error("Validation middleware error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal validation error",
+    });
+  }
+};
+
+
+
+
 
 /**
  * 

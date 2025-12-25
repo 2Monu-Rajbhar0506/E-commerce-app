@@ -5,7 +5,6 @@ import { useSelector } from "react-redux";
 
 const Dashboard = () => {
   const user = useSelector((state) => state.user);
-console.log("User dashboard",user);
 
   return (
     <section className="bg-[#eef3f8] min-h-screen w-full">

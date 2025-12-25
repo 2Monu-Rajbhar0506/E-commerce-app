@@ -97,7 +97,7 @@ export const getCategoryController = async (req, res) => {
 };
 
 
-export const updateCategoryController = async (req, res) => {
+export const updateCategoryController = async (req, res, next) => {
   try {
     const { _id, name, image } = updateCategorySchema.parse(req.body);
 
