@@ -6,6 +6,7 @@ import api from "../../utils/Axios";
 import SummaryApi from "../../common/summaryApi";
 import AxiosToastError from "../../utils/AxiosToastError";
 import toast from "react-hot-toast";
+import Loader from "../Loader";
 
 const UploadCategoryModel = ({ close, fetchData }) => {
   const [loading, setLoading] = useState(false);
@@ -149,7 +150,7 @@ This is why React forms must use [name]: value for dynamic forms. */
                     alt="category"
                     className="w-full h-full object-scale-down"
                   />
-                ) : (
+                ) : ( uploading ?  <Loader/> :
                   <p className="text-sm text-neutral-500">
                     {" "}
                     <span className="flex justify-center">

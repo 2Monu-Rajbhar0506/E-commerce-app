@@ -33,7 +33,13 @@ export const createProductSchema = z.object({
 
       description: z.string().trim().min(1, "Description is required"),
 
-      more_details: z.record(z.unknown()).optional(),
+      more_details: z
+        .record(
+          z.string().min(1),
+          z.union([z.string(), z.number(), z.boolean()])
+        )
+        .optional()
+        .default({}),
     })
     .refine((data) => !data.discount || data.discount <= data.price, {
       message: "Discount cannot be greater than price",

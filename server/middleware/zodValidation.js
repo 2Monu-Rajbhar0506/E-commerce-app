@@ -59,7 +59,7 @@ export const validate = (schema) => async (req, res, next) => {
 
     next();
   } catch (error) {
-    // 🔴 Zod validation error
+  
     if (error instanceof z.ZodError) {
       const formattedErrors = error.errors.map((err) => ({
         location: err.path[0], // body | query | params
@@ -74,7 +74,7 @@ export const validate = (schema) => async (req, res, next) => {
       });
     }
 
-    // 🔴 Unexpected error
+    
     console.error("Validation middleware error:", error);
 
     return res.status(500).json({

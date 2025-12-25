@@ -7,19 +7,22 @@ import api from "../../utils/Axios.js";
 import SummaryApi from "../../common/summaryApi.js";
 import toast from "react-hot-toast";
 import AxiosToastError from "../../utils/AxiosToastError.js";
+import Loader from "../Loader.jsx";
 
 const UploadSubCategory = ({ close, fetchData }) => {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const [subCategoryData, setSubCategoryData] = useState({
     name: "",
     image: "",
     category: [],
   });
 
-  const allCategory = useSelector((state) => state.product.allCategory);
+  const allCategory = useSelector((state) => state?.product?.allCategory || []);
 
 
+  //Input Change
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -29,11 +32,24 @@ const UploadSubCategory = ({ close, fetchData }) => {
     }));
   };
 
-
+  //Image Upload
   const handleSubCategoryUploadImage = async (e) => {
     try {
-      const file = e.target.files[0];
+      const file = e.target.files?.[0];
       if (!file) return;
+
+      //adding the validation before uploading
+      const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
+      if (!file.type.startsWith("image/")) {
+        e.target.value = "";
+        return toast.error("Only image files allowed");
+      }
+
+      if (file.size > MAX_SIZE) {
+        e.target.value = "";
+        return toast.error("Image must be under 2MB");
+      }
 
       setUploadLoading(true);
 
@@ -52,16 +68,19 @@ const UploadSubCategory = ({ close, fetchData }) => {
       AxiosToastError(err);
     } finally {
       setUploadLoading(false);
+      e.target.value = "";
     }
   };
 
 
+  //Category Select
   const handleCategory = (e) => {
     const categoryId = e.target.value;
 
     if (!categoryId) return;
 
     const categoryObject = allCategory.find((el) => el._id === categoryId);
+    if (!categoryObject) return;
 
     // Prevent duplicates
     const alreadyExists = subCategoryData.category.some(
@@ -74,9 +93,13 @@ const UploadSubCategory = ({ close, fetchData }) => {
       ...prev,
       category: [...prev.category, categoryObject],
     }));
+
+    //Reset select after choosing category
+    e.target.value = "";
   };
 
 
+  //Remove Category
   const handleRemoveCategorySelected = (categoryId) => {
     setSubCategoryData((prev) => ({
       ...prev,
@@ -156,7 +179,7 @@ const UploadSubCategory = ({ close, fetchData }) => {
               type="text"
               name="name"
               value={subCategoryData.name}
-              placeholder="Enter your name"
+              placeholder="Enter sub category name"
               onChange={handleChange}
               className="p-3 bg-blue-50 border border-gray-300 shadow-sm outline-none focus:border-primary-200 rounded-xl"
             />
@@ -173,18 +196,31 @@ const UploadSubCategory = ({ close, fetchData }) => {
                     alt="Sub Category"
                     className="w-full h-full object-contain"
                   />
+                ) : uploadLoading ? (
+                  <Loader />
                 ) : (
                   <p className="text-sm text-neutral-400">No Image</p>
                 )}
               </div>
 
-              <label htmlFor="file">
-                <div className="px-5 py-2 border border-primary-100 text-primary-200 rounded hover:bg-primary-200 hover:text-neutral-900 cursor-pointer transition">
+              <label
+                htmlFor={!uploadLoading ? "file" : undefined}
+                className="inline-block"
+              >
+                <div
+                  className={`px-5 py-2 rounded transition ${
+                    uploadLoading
+                      ? "opacity-50 bg-gray-500 cursor-not-allowed"
+                      : "border border-primary-100 text-primary-200 rounded hover:bg-primary-200 hover:text-white cursor-pointer"
+                  }`}
+                >
                   {uploadLoading ? "Uploading..." : "Upload Image"}
                 </div>
                 <input
                   type="file"
                   id="file"
+                  disabled={uploadLoading}
+                  accept="image/*"
                   className="hidden"
                   onChange={handleSubCategoryUploadImage}
                 />
