@@ -9,7 +9,7 @@ import { useDispatch } from "react-redux";
 import { setUserDetails } from "./store/userSlice.js";
 import SummaryApi from "./common/summaryApi.js";
 import api from "./utils/Axios.js";
-import { setAllCategory,setAllSubCategory } from "./store/productSlice.js";
+import { setAllCategory,setAllSubCategory, setCategoryLoading } from "./store/productSlice.js";
 import AxiosToastError from "./utils/AxiosToastError.js";
 
 function App() {
@@ -28,6 +28,8 @@ function App() {
   // Fetch categories
   const fetchCategory = async () => {
     try {
+      dispatch(setCategoryLoading(true))
+      
       const response = await api({
         ...SummaryApi.getCategory,
       });
@@ -37,6 +39,8 @@ function App() {
       }
     } catch (error) {
       AxiosToastError(error);
+    } finally {
+      dispatch(setCategoryLoading(false));
     }
   };
 

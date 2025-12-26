@@ -1,5 +1,6 @@
 import Product from "../models/productModel.js";
 import { errorResponse, successResponse } from "../utils/response.js";
+import mongoose from "mongoose";
 
 export const createProductController = async (req, res) => {
     try {
@@ -110,5 +111,41 @@ export const getProductController = async (req, res) => {
      console.error(error)
      return errorResponse(res, error.message || "Internal server error", 500);
  }   
+}
+
+export const getProductByCategory = async (req, res) => {
+  try {
+    const { categoryId, limit = 15 } = req.body;
+    
+    if (!categoryId || !mongoose.Types.ObjectId.isValid(categoryId)) {
+      errorResponse(res,"Invalid or missing Category Id",400)
+    }
+
+    const products = await Product.find({
+      category: { $in: [categoryId] },   // use $in only if category is array in schema
+    })
+      .select("-__v")
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .lean();
+    
+    return successResponse(
+      res,
+      "Home category product list",
+      ({
+        categoryId,
+        products,
+        totalShown: products.length,
+      }),
+      201
+    );
+
+
+
+  } catch (error) {
+    console.error("getHomeProductsByCategory error:", error);
+    
+    errorResponse(res, error.message || "Internal Server Error", 500 )
+  }
 }
 

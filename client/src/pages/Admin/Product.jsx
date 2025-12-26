@@ -152,7 +152,7 @@ export default Product;*/
 
 import React, { useState, useEffect, useCallback } from "react";
 import AxiosToastError from "../../utils/AxiosToastError";
-import api from "../../utils/Axios";
+import api from "../../utils/Axios.js";
 import SummaryApi from "../../common/summaryApi";
 import Loader from "../../components/Loader.jsx";
 import ProductCardAdmin from "../../components/Admin/ProductCardAdmin.jsx";
