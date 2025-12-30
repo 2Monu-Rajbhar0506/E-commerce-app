@@ -54,3 +54,12 @@ body{
 html{
   scroll-behavior: smooth;
 }
+
+.scrollbarCustom::-webkit-scrollbar{
+  width:10px;
+  @apply bg-slate-200
+}
+
+.scrollbarCustom::-webkit-scrollbar-thumb{
+   @apply bg-amber-200  rounded-full
+}

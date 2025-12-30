@@ -149,3 +149,54 @@ export const getProductByCategory = async (req, res) => {
   }
 }
 
+export const getProductByCategoryAndSubCategory = async (req, res) => {
+  try {
+    const { categoryId, subCategoryId, page = 1, limit = 10, } = req.body;
+
+    if (!categoryId || !subCategoryId) {
+      return errorResponse(res, "categorId and subCategoryId is required", 400);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(categoryId) || !mongoose.Types.ObjectId.isValid(subCategoryId)) {
+      errorResponse(res, "Invalid categoryId or subCategoryId", 400);
+    }
+
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const limitNumber = Math.min(Number(limit) || 10, 50);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const query = {
+      category: { $in: [categoryId] },
+      subCategory: { $in: [subCategoryId] },
+    }
+
+    const [products, totalCount] = await Promise.all([
+      Product.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNumber)
+        .lean(),
+      Product.countDocuments(query),
+    ]);
+
+    return successResponse(
+      res,
+      "Product list fetched successfully",
+      {
+        products,
+        pagination: {
+          page: pageNumber,
+          limit: limitNumber,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limitNumber),
+        },
+      },
+      200
+    );
+
+  } catch (error) {
+    console.error("getProductByCategoryAndSubCategory:", error);
+    errorResponse(res, "Internal server error", 500);
+  }
+}
+

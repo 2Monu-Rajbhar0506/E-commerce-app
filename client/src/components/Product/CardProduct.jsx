@@ -8,7 +8,7 @@ const CardProduct = ({ data }) => {
   return (
     <Link
       to={url}
-      className="border border-gray-200 py-2 lg:p-4 grid gap-1 lg:gap-3 min-w-45 lg:min-w-52 rounded cursor-pointer bg-white"
+      className="border border-gray-200 py-2 lg:p-4 grid gap-1 lg:gap-3 min-w-45 lg:min-w-52 rounded cursor-pointer bg-white hover:bg-primary-100/20"
     >
       <div className="min-h-24 max-h-24 lg:max-h-32 rounded overflow-hidden">
         <img
