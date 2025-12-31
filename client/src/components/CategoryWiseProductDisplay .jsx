@@ -12,40 +12,63 @@ import SummaryApi from '../common/summaryApi.js';
 import CardLoading from "./Product/CardLoading.jsx";
 import CardProduct from "./Product/CardProduct.jsx";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
+import { useSelector } from "react-redux";
+import { validURLConvert } from "../utils/ValidUrlConverter.js";
 
 const CategoryWiseProductDisplay = ({ _id, name }) => {
     const [ data, setData ] = useState([]);
     const [loading, setLoading] = useState(false);
-
-     const scrollRef = useRef(null);
+    const subCategoryData = useSelector((state) => state.product.allSubCategory);
+    const loadingCardNumber = new Array(6).fill(null);
+    const scrollRef = useRef(null);
     
+    
+
+  const handleRedirectProductListpage = () => {
+    if (!_id || !Array.isArray(subCategoryData)) return;
+
+    const matchedSubCategories = subCategoryData.filter(
+      (sub) =>
+        Array.isArray(sub.categories) &&
+        sub.categories.some((c) => c._id === _id)
+    );
+
+    if (!matchedSubCategories.length) return;
+    const firstSub = matchedSubCategories[0];
+
+    const url = `/${validURLConvert(name)}-${_id}/${validURLConvert(firstSub.name)}-${firstSub._id}`;
+        
+    return url;
+  };
+
+  const redirectUrl = handleRedirectProductListpage();
       
-    const fetchCategoryWiseProduct = useCallback(async () => {
-        if (!_id) return;
+  const fetchCategoryWiseProduct = useCallback(async () => {
+    if (!_id) return;
 
-        try {
-            setLoading(true);
+    try {
+      setLoading(true);
 
-            const response = await api({
-                ...SummaryApi.getProductByCategory,
-                data: {
-                    categoryId: _id,
-                    limit: 15,
-                },
-            });
+      const response = await api({
+        ...SummaryApi.getProductByCategory,
+        data: {
+          categoryId: _id,
+          limit: 15,
+        },
+      });
 
-            const { data: responseData } = response;
+      const { data: responseData } = response;
             
-            if (responseData?.success) {
-                setData(responseData.data.products);
-            }
+      if (responseData?.success) {
+        setData(responseData.data.products);
+      }
             
-        } catch (error) {
-            AxiosToastError(error)
-        } finally {
-            setLoading(false);
-        }
-    }, [_id]);
+    } catch (error) {
+      AxiosToastError(error)
+    } finally {
+      setLoading(false);
+    }
+  }, [_id]);
 
     useEffect(() => {
       fetchCategoryWiseProduct();
@@ -55,7 +78,7 @@ const CategoryWiseProductDisplay = ({ _id, name }) => {
     //   console.log("Updated products:", data);
     // }, [data]);
 
-    const loadingCardNumber = new Array(6).fill(null);
+   
 
     const scrollByAmount = () => scrollRef.current?.clientWidth * 0.8 || 300;
   
@@ -79,7 +102,7 @@ const CategoryWiseProductDisplay = ({ _id, name }) => {
     <div>
       <div className="container mx-auto p-4 flex items-center justify-between gap-4">
         <h3 className="font-semibold text-lg md:text-xl">{name}</h3>
-        <Link to="" className="text-green-600 hover:text-green-400">
+        <Link to={redirectUrl} className="text-green-600 hover:text-green-400">
           See All
         </Link>
       </div>
@@ -97,9 +120,8 @@ const CategoryWiseProductDisplay = ({ _id, name }) => {
           ref={scrollRef}
           className="flex gap-5 md:gap-6 lg:gap-8 mx-auto px-4 sm:px-17 md:px-20 lg:px-5 overflow-x-auto scrollbar-hide pb-3 snap-x snap-mandatory scroll-smooth"
         >
-          {
-            loading
-            ? (loadingCardNumber.map((_, index) => {
+          {loading
+            ? loadingCardNumber.map((_, index) => {
                 return (
                   <CardLoading
                     key={index + "CategoryWiseProductDisplay123"}
@@ -107,15 +129,15 @@ const CategoryWiseProductDisplay = ({ _id, name }) => {
                   />
                 );
               })
-            ) : (data.map((p, index) => {
-                 return (
-                   <CardProduct
-                     className="shrink-0 snap-start "
-                     data={p}
-                     key={p._id + "CategoryWiseProductDisplay" + index}
-                   />
-                 );
-              }))}
+            : data.map((p, index) => {
+                return (
+                  <CardProduct
+                    className="shrink-0 snap-start "
+                    data={p}
+                    key={p._id + "CategoryWiseProductDisplay" + index}
+                  />
+                );
+              })}
         </div>
 
         <button

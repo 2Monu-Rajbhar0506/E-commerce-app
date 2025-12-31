@@ -80,7 +80,10 @@ export const getProductController = async (req, res) => {
      } : {};
 
      const [products, totalCount] = await Promise.all([
-       Product.find(query)
+       Product.find({
+         ...query,
+         isDeleted: false,
+       })
          .sort(
            // first sort on the basis of relevance, then on the basis on newest/time based
            search
@@ -122,7 +125,8 @@ export const getProductByCategory = async (req, res) => {
     }
 
     const products = await Product.find({
-      category: { $in: [categoryId] },   // use $in only if category is array in schema
+      category: { $in: [categoryId] }, // use $in only if category is array in schema
+      isDeleted: false,
     })
       .select("-__v")
       .sort({ createdAt: -1 })
@@ -168,7 +172,8 @@ export const getProductByCategoryAndSubCategory = async (req, res) => {
     const query = {
       category: { $in: [categoryId] },
       subCategory: { $in: [subCategoryId] },
-    }
+      isDeleted: false,
+    };
 
     const [products, totalCount] = await Promise.all([
       Product.find(query)
@@ -200,3 +205,155 @@ export const getProductByCategoryAndSubCategory = async (req, res) => {
   }
 }
 
+export const getProductDetails = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId) {
+      return errorResponse(res, "Product Id is required", 400);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return errorResponse(res, "Invalid product Id", 400);
+    }
+
+    // const product = await Product.findById(productId)
+    //   .populate("category subCategory")
+    //   .lean();
+
+    const product = await Product.findOne({
+      _id: productId,
+      isDeleted: false,
+    }).populate("category subCategory")
+      .lean();
+    
+
+    if (!product) {
+      return errorResponse(res, "Product not found", 404);
+    }
+
+    return successResponse(
+      res,
+      "Product details fetched successfully",
+      product,
+      200
+    );
+  } catch (error) {
+    console.error("getProductDetails error:", error);
+    return errorResponse(res, "Internal Server Error", 500);
+  }
+}
+
+
+export const updateProductDetails = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const updateData = { ...req.body };
+
+    if (!productId) {
+      return errorResponse(res, "Product ID is required", 400);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return errorResponse(res, "Invalid Product ID", 400);
+    }
+
+    const restrictedFields = [
+      "_id",
+      "createdAt",
+      "updatedAt",
+      "isDeleted"
+    ];
+
+    // restrictedFields.forEach((field) => {
+    //   if (field in updateData) {
+    //     delete updateData[field];
+    //   }
+    // });
+
+    for (const field of restrictedFields) {
+      delete updateData[field];
+    }
+
+
+    //validating the numeric field
+    const numericFields = ["price", "stock", "discount"];
+
+    for (const field of numericFields) {
+      if (
+        //“If this numeric field exists and(&&) its value is negative → throw an error.”
+        updateData[field] !== undefined &&
+        (Number(updateData[field]) < 0 || Number.isNaN(Number(updateData[field])))
+      ) {
+        return errorResponse(res, `${field} cannot be nagative`, 400);
+      }
+    };
+
+    //update the product
+    const updateProduct = await Product.findByIdAndUpdate(
+      productId,
+      { $set: updateData },
+      {
+        new: true,
+        runValidators: true
+      }
+    ).lean();
+
+    if (!updateProduct) {
+      return errorResponse(res, "Product not found", 404);
+    }
+
+    return successResponse(
+      res,
+      "Product updated successfully",
+      updateProduct,
+      200,
+    );
+
+  } catch (error) {
+    console.error("updateProductDetails error:", error);
+    return errorResponse(res, "Internal Server Error", 500);
+  }
+}
+
+export const deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId) {
+      return errorResponse(res, "Product ID is required", 400);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return errorResponse(res, "Invalid Product Id", 400);
+    }
+
+    // const deletedProduct = await Product.findByIdAndUpdate(
+    //   productId,
+    //   { isDeleted: true },
+    //   { new: true },
+    // ).lean();
+
+    
+    //block deleting an already deleted product
+    const deletedProduct = await Product.findOneAndUpdate(
+      { _id: productId, isDeleted: false },
+      { isDeleted: true },
+      { new: true }
+    ).lean();
+
+    if (!deletedProduct) {
+      return errorResponse(res, "Product not found or already deleted", 404);
+    }
+
+    return successResponse(
+      res,
+      "Product Deleted Successfully",
+      deletedProduct,
+      200
+    );
+  } catch (error) {
+    console.error("deleteProduct error:", error);
+    return errorResponse(res, "Internal Server Error", 500);
+  }
+}

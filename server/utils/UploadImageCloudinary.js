@@ -9,30 +9,35 @@ cloudinary.config({
 
 const uploadImageCloudinary = async (image) => {
     try {
-        if (!image) {
-            throw new Error("No image provided for upload");
-        }
+      // SIMPLEST DUPLICATE PREVENTION
+      // If already a Cloudinary URL, return it directly
+      if (typeof image === "string" && image.startsWith("http")) {
+        return { url: image };
+      }
 
-        //handles buffer or file (like from multer or formdata)
-        const buffer = image?.buffer || Buffer.from(await image.arrayBuffer());
+      if (!image) {
+        throw new Error("No image provided for upload");
+      }
 
-        const uploadResult = await new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-                {
-                    folder: "commerce",
-                    resource_type: "auto"
-                },
-                (error, result) => {
-                    if (error) return reject(error);
-                    resolve(result);
-                }
-            );
+      //handles buffer or file (like from multer or formdata)
+      const buffer = image?.buffer || Buffer.from(await image.arrayBuffer());
 
-            stream.end(buffer);
-        });
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "commerce",
+            resource_type: "auto",
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
 
-        return uploadResult;
+        stream.end(buffer);
+      });
 
+      return uploadResult;
     } catch (error) {
         console.error("Cloudinary Upload Error: ", error);
         throw new Error("Failed to upload image to cloudinary");

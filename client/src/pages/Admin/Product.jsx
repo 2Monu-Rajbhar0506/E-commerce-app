@@ -260,9 +260,9 @@ const Product = () => {
 
       {!loading && products.length > 0 && (
         <div className="p-4 bg-blue-50 rounded-xl shadow-sm">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[55vh]">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-9 min-h-[55vh]">
             {products.map((product) => (
-              <ProductCardAdmin key={product._id} data={product} />
+              <ProductCardAdmin key={product._id} data={product} fetchProduct={ fetchProducts } />
             ))}
           </div>
 

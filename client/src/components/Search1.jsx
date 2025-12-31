@@ -38,7 +38,7 @@ const Search1 = () => {
           ) : (
             <button
               onClick={redirectToSearchPage}
-              className="text-gray-600    hover:text-primary-200 active:scale-90 transition-all group-focus-within:text-amber-500"
+              className="text-gray-600  hover:text-primary-200 active:scale-90 transition-all group-focus-within:text-amber-500"
               aria-label="Search"
             >
               <IoSearch size={24} />

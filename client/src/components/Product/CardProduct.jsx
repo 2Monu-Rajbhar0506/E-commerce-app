@@ -2,6 +2,7 @@ import React from 'react'
 import { DisplayPriceInRupees } from '../../utils/DisplayPriceInRupees';
 import { Link } from 'react-router-dom';
 import { validURLConvert } from '../../utils/ValidUrlConverter';
+import { PriceWithDiscount } from '../../utils/PriceWithDiscount';
 
 const CardProduct = ({ data }) => {
   const url = `/product/${validURLConvert(data.name)}-${data._id}`
@@ -23,14 +24,32 @@ const CardProduct = ({ data }) => {
       <div className="p-1 lg:p-0 font-medium text-ellipsis text-sm lg:text-base line-clamp-2 m-2">
         {data.name}
       </div>
-      <div className="w-fit ml-2 px-2 lg:px-0 text-sm lg:text-base">{data.unit}</div>
+      <div className="w-fit ml-2 px-2 lg:px-0 text-sm lg:text-base">
+        {data.unit}
+      </div>
 
       <div className="px-2 lg:px-0 flex items-center justify-between gap-1 lg:gap-4 text-sm lg:text-base">
-        <div className="font-semibold">
-          {DisplayPriceInRupees(data.price)}
+        <div className='flex items-center gap-1'>
+          <div className="font-semibold">
+          {DisplayPriceInRupees(PriceWithDiscount(data?.price,data?.discount))}
+          </div>
+          {
+            data?.discount > 0 && (
+              <p className='text-green-700'>{ data.discount }%OFF</p>
+            )
+          }
         </div>
-        <div className="bg-green-600 hover:bg-green-700 transition  text-white px-2 lg:px-4 py-1 rounded ">
-          <button>Add</button>
+
+        <div className=''>
+          {
+            data.stock === 0 ? (
+              <p className='text-red-500 text-sm text-center'>Out of stock</p>
+            ) : (         
+            <div className="bg-green-600 hover:bg-green-700 transition  text-white px-2 lg:px-4 py-1 rounded ">
+              <button>Add</button>
+            </div>
+            )
+          }
         </div>
       </div>
     </Link>
