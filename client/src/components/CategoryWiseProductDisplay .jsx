@@ -36,7 +36,7 @@ const CategoryWiseProductDisplay = ({ _id, name }) => {
     if (!matchedSubCategories.length) return;
     const firstSub = matchedSubCategories[0];
 
-    const url = `/${validURLConvert(name)}-${_id}/${validURLConvert(firstSub.name)}-${firstSub._id}`;
+    const url = `/${validURLConvert(name)}-${_id}/${validURLConvert(firstSub?.name)}-${firstSub?._id}`;
         
     return url;
   };

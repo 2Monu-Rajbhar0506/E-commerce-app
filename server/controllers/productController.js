@@ -357,3 +357,53 @@ export const deleteProduct = async (req, res) => {
     return errorResponse(res, "Internal Server Error", 500);
   }
 }
+
+export const searchProduct = async (req, res) => {
+  try {
+    let { search = "", page = 1, limit = 10 } = req.query;
+
+    page = Math.max(Number(page), 1);
+    limit = Math.min(Math.max(Number(limit), 1), 50);
+
+    const skip = (page - 1) * limit;
+    const trimmedSearch = search.trim();
+
+    const query = trimmedSearch ? { $text: { $search: trimmedSearch } } : {};
+
+    const sort = trimmedSearch
+      ? { score: { $meta: "textScore" }, createdAt: -1 }
+      : { createdAt: -1 };
+
+    const [products, totalCount] = await Promise.all([
+      Product.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .populate("category subCategory")
+        .lean(),
+      
+      Product.countDocuments(query),
+    ]);
+
+    return successResponse(
+      res,
+      "Product search results",
+      {
+        products,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNextPage: page * limit < totalCount,
+          hasPrevPage: page > 1,
+        },
+      },
+      200
+    );
+
+  } catch (error) {
+    console.error("searchProduct error:", error);
+    return errorResponse(res, "Internal Server Error", 500);
+  }
+}
