@@ -1,11 +1,50 @@
-import React from 'react'
+import React,{useState} from 'react'
 import { DisplayPriceInRupees } from '../../utils/DisplayPriceInRupees';
 import { Link } from 'react-router-dom';
 import { validURLConvert } from '../../utils/ValidUrlConverter';
 import { PriceWithDiscount } from '../../utils/PriceWithDiscount';
+import SummaryApi from '../../common/summaryApi';
+import AxiosToastError from '../../utils/AxiosToastError';
+import api from '../../utils/Axios';
+import toast from 'react-hot-toast';
+import { useGlobalContext } from '../../provider/GlobalProvider.jsx';
 
 const CardProduct = ({ data }) => {
   const url = `/product/${validURLConvert(data.name)}-${data._id}`
+  const [loading, setLoading] = useState(false);
+  const { fetchCartItem } = useGlobalContext();
+
+  const handleAddToCart = async(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      setLoading(true);
+
+      const response = await api({
+        ...SummaryApi.addToCart,
+        data: {
+          productId: data?._id
+        },
+      });
+
+      const { data: responseData } = response;
+
+      if (responseData.success) {
+        toast.success(responseData?.message);
+        if (fetchCartItem) {
+          fetchCartItem();
+        }
+      }
+
+    } catch (error) {
+      AxiosToastError(error);
+    } finally {
+      setLoading(false);
+    }
+
+  }
+  
   return (
     <Link
       to={url}
@@ -29,27 +68,25 @@ const CardProduct = ({ data }) => {
       </div>
 
       <div className="px-2 lg:px-0 flex items-center justify-between gap-1 lg:gap-4 text-sm lg:text-base">
-        <div className='flex items-center gap-1'>
+        <div className="flex items-center gap-1">
           <div className="font-semibold">
-          {DisplayPriceInRupees(PriceWithDiscount(data?.price,data?.discount))}
+            {DisplayPriceInRupees(
+              PriceWithDiscount(data?.price, data?.discount)
+            )}
           </div>
-          {
-            data?.discount > 0 && (
-              <p className='text-green-700'>{ data.discount }%OFF</p>
-            )
-          }
+          {data?.discount > 0 && (
+            <p className="text-green-700">{data.discount}%OFF</p>
+          )}
         </div>
 
-        <div className=''>
-          {
-            data.stock === 0 ? (
-              <p className='text-red-500 text-sm text-center'>Out of stock</p>
-            ) : (         
+        <div className="">
+          {data.stock === 0 ? (
+            <p className="text-red-500 text-sm text-center">Out of stock</p>
+          ) : (
             <div className="bg-green-600 hover:bg-green-700 transition  text-white px-2 lg:px-4 py-1 rounded ">
-              <button>Add</button>
+              <button onClick={handleAddToCart}>Add</button>
             </div>
-            )
-          }
+          )}
         </div>
       </div>
     </Link>

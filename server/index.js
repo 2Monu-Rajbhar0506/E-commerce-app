@@ -11,6 +11,7 @@ import uploadRouter from "./routes/uploadRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import subCategoryRouter from "./routes/SubCategoryRoutes.js";
 import productRouter from "./routes/productRouter.js";
+import cartRouter from "./routes/cartRouter.js";
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ const app = express();
 
 /*app.use((req, res, next) => {
   if (req.method !== "GET") {
-    console.log(`📩 ${req.method} ${req.url}`);
+    console.log(` ${req.method} ${req.url}`);
     console.log("Headers:", req.headers["content-type"]);
     console.log("Body:", req.body);
   }
@@ -57,6 +58,7 @@ app.use("/api/category", categoryRouter);
 app.use("/api/file", uploadRouter);
 app.use("/api/subcategory", subCategoryRouter);
 app.use("/api/product", productRouter);
+app.use("/api/cart", cartRouter);
 
 connectDB().then(() => {
     app.listen(PORT, () => {

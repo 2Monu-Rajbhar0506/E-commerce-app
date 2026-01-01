@@ -11,6 +11,7 @@ import SummaryApi from "./common/summaryApi.js";
 import api from "./utils/Axios.js";
 import { setAllCategory,setAllSubCategory, setCategoryLoading } from "./store/productSlice.js";
 import AxiosToastError from "./utils/AxiosToastError.js";
+import GlobalProvider from "./provider/GlobalProvider.jsx";
 
 function App() {
   const dispatch = useDispatch();
@@ -58,23 +59,25 @@ function App() {
     }
   };
 
+  
 
 
   useEffect(() => {
     fetchUser();
     fetchCategory();
     fetchSubCategory();
+   // fetchCartItem();
   }, []);
 
   return (
-    <>
+    <GlobalProvider>
       <Header />
       <main className="min-h-[78vh]">
         <Outlet />
       </main>
       <Footer />
       <Toaster />
-    </>
+    </GlobalProvider>
   );
 }
 

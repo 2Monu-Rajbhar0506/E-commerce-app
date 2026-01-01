@@ -1,4 +1,4 @@
-import React,{useState} from "react";
+import React,{useEffect, useState} from "react";
 import logo from "../assets/logo.png";
 import Search1 from "./Search1.jsx";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import useMobile from "../hooks/useMobile.jsx";
 import { useSelector } from "react-redux";
 import { GoTriangleDown,GoTriangleUp  } from "react-icons/go";
 import UserMenu from "./UserMenu.jsx";
+import { DisplayPriceInRupees } from "../utils/DisplayPriceInRupees.js";
 
 const Header = () => {
   const isMobile = useMobile();
@@ -15,7 +16,12 @@ const Header = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
   const [openUserMenu, setOpenUserMenu] = useState(false);
+  const cartItem = useSelector(state => state?.cartItem?.items);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [totalQty, setTotalQty] = useState(0);
 
+  console.log("header",cartItem);
+  
   //console.log("User inside the store :", user);
 
   const redirectToLoginPage = () => navigate("/login");
@@ -33,6 +39,24 @@ const Header = () => {
      navigate("user-mobile-menu");
 
   }
+
+  //total item and total price
+  useEffect(() => {
+    const qty = cartItem.reduce((prev, curr) => {
+      return prev + curr.quantity
+    }, 0);
+
+    setTotalQty(qty);
+
+    const totalPrice = cartItem.reduce((prev, curr) => {
+      return prev + (curr?.productId?.price * curr.quantity)
+    }, 0);
+
+    setTotalPrice(totalPrice);
+    
+  }, [cartItem]);
+
+
 
   return (
     <header className="h-24 lg:h-20 lg:shadow-md  sticky top-0 bg-white z-50 flex flex-col justify-center gap-1">
@@ -57,7 +81,7 @@ const Header = () => {
           <div className="flex items-center gap-4 text-gray-700 font-medium">
             {/* Mobile User Icon */}
             <button
-             onClick={handleMobileUser}
+              onClick={handleMobileUser}
               className="lg:hidden text-neutral-600 active:scale-95 transition"
               aria-label="Open User Profile"
             >
@@ -111,9 +135,16 @@ const Header = () => {
                   <FaShoppingCart size={22} />
                 </span>
 
-                <span className="leading-tight text-left font-semibold">
-                  My Cart
-                </span>
+                {cartItem[0] ? (
+                  <div>
+                    <p>{ totalQty } items</p>
+                    <p>{ DisplayPriceInRupees(totalPrice) }</p>
+                  </div>
+                ) : (
+                  <span className="leading-tight text-left font-semibold">
+                    My Cart
+                  </span>
+                )}
               </button>
             </div>
           </div>

@@ -35,8 +35,8 @@ export const addToCartItemController = async (req, res) => {
 
         //create cart item
         const cartItem = await CartProduct.create({
-          userId,
           productId,
+          userId,
           quantity: 1,
         });
 
@@ -58,6 +58,35 @@ export const addToCartItemController = async (req, res) => {
     } catch (error) {
         console.error("addToCartItemController error:", error);
         return errorResponse(res, "Internal Server Error", 500);
+    }
+}
+
+export const getCartItemController = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        if (!userId) {
+            return errorResponse(res, "Unauthorized User", 401);
+        }
+
+        const cartItems = await CartProduct.find({ userId })
+          .populate({
+            path: "productId",
+            select: "name price images discount stock",
+          })
+          .sort({ createdAt: -1 })
+            .lean();
+        
+        return successResponse(
+            res,
+            "cart items fetched successfully",
+            cartItems,
+            200
+        );
+          
+    } catch (error) {
+        console.error("Get Cart Items Error :", error);
+        return errorResponse(res, "Internal server error", 500);
     }
 }
 

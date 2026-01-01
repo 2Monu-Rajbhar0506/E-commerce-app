@@ -8,7 +8,7 @@ export async function authUser(req, res, next) {
     
     if (!token) {
       return res.status(401).json({
-        message: "Unauthorized user",
+        message: "Unauthorized user, Please login to proceed further",
         success: false,
         error: true,
       });
