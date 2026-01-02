@@ -1,3 +1,4 @@
+import { incrementCartItemQtyController } from "../../../server/controllers/cartProductController";
 import ForgotPassword from "../pages/ForgotPassword";
 
 export const baseURL = "http://localhost:8080";
@@ -125,11 +126,23 @@ const SummaryApi = {
   },
   addToCart: {
     url: "/api/cart/add-To-cart",
-    method: "POST"
+    method: "POST",
   },
   getCartItem: {
     url: "/api/cart/get",
-    method: "GET"
+    method: "GET",
+  },
+  updateCartItemQTY: {
+    url: "/api/cart/update-cart-qty",
+    method: "PUT",
+  },
+  incrementCartItemQty: {
+    url: "/api/cart/increment-cart-item",
+    method: "PUT",
+  },
+  decrementCartItemQty: {
+    url: "/api/cart/decrement-cart-item",
+    method: "PUT",
   },
 };
 

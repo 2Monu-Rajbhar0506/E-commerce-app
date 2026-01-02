@@ -244,7 +244,6 @@ export const getProductDetails = async (req, res) => {
   }
 }
 
-
 export const updateProductDetails = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -407,3 +406,4 @@ export const searchProduct = async (req, res) => {
     return errorResponse(res, "Internal Server Error", 500);
   }
 }
+
