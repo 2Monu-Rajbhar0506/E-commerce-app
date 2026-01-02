@@ -8,6 +8,8 @@ import { useSelector } from "react-redux";
 import { GoTriangleDown,GoTriangleUp  } from "react-icons/go";
 import UserMenu from "./UserMenu.jsx";
 import { DisplayPriceInRupees } from "../utils/DisplayPriceInRupees.js";
+import { useGlobalContext } from "../provider/GlobalProvider.jsx";
+import DisplayCartItem from "./Product/DisplayCartItem.jsx";
 
 const Header = () => {
   const isMobile = useMobile();
@@ -16,13 +18,9 @@ const Header = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
   const [openUserMenu, setOpenUserMenu] = useState(false);
-  const cartItem = useSelector(state => state?.cartItem?.items);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [totalQty, setTotalQty] = useState(0);
-
-  console.log("header",cartItem);
-  
-  //console.log("User inside the store :", user);
+  const { totalPrice, totalQty } = useGlobalContext();
+  const cartItem = useSelector((state) => state?.cartItem?.items);
+  const [openCartSection, setOpenCartSection] = useState(false);
 
   const redirectToLoginPage = () => navigate("/login");
 
@@ -36,27 +34,9 @@ const Header = () => {
       return;
     }
 
-     navigate("user-mobile-menu");
+    navigate("user-mobile-menu");
 
   }
-
-  //total item and total price
-  useEffect(() => {
-    const qty = cartItem.reduce((prev, curr) => {
-      return prev + curr.quantity
-    }, 0);
-
-    setTotalQty(qty);
-
-    const totalPrice = cartItem.reduce((prev, curr) => {
-      return prev + (curr?.productId?.price * curr.quantity)
-    }, 0);
-
-    setTotalPrice(totalPrice);
-    
-  }, [cartItem]);
-
-
 
   return (
     <header className="h-24 lg:h-20 lg:shadow-md  sticky top-0 bg-white z-50 flex flex-col justify-center gap-1">
@@ -127,6 +107,7 @@ const Header = () => {
 
               {/* Cart Button */}
               <button
+                onClick={() => setOpenCartSection(true)}
                 type="button"
                 aria-label="Open Cart"
                 className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition"
@@ -135,16 +116,18 @@ const Header = () => {
                   <FaShoppingCart size={22} />
                 </span>
 
-                {cartItem[0] ? (
-                  <div>
-                    <p>{ totalQty } items</p>
-                    <p>{ DisplayPriceInRupees(totalPrice) }</p>
-                  </div>
-                ) : (
-                  <span className="leading-tight text-left font-semibold">
-                    My Cart
-                  </span>
-                )}
+                <div className="font-semibold text-sm">
+                  {cartItem[0] ? (
+                    <div>
+                      <p>{totalQty} items</p>
+                      <p>{DisplayPriceInRupees(totalPrice)}</p>
+                    </div>
+                  ) : (
+                    <span className="leading-tight text-left font-semibold">
+                      My Cart
+                    </span>
+                  )}
+                </div>
               </button>
             </div>
           </div>
@@ -155,6 +138,10 @@ const Header = () => {
       <div className="container mx-auto px-2 lg:hidden">
         <Search1 />
       </div>
+
+      {openCartSection && (
+        <DisplayCartItem close={() => setOpenCartSection(false)} />
+      )}
     </header>
   );
 };

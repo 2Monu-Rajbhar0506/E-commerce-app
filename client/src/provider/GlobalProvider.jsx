@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect,useMemo } from "react";
+import { createContext, useContext, useEffect,useMemo, useState } from "react";
 import api from "../utils/Axios";
 import SummaryApi from "../common/summaryApi";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { removeFromCart, setCartItems, upsertCartItem } from "../store/cartProduct";
 import AxiosToastError from "../utils/AxiosToastError";
+import { PriceWithDiscount } from "../utils/PriceWithDiscount";
 
 
 // GOLDEN RULE (very important)
@@ -31,34 +32,37 @@ export const GlobalContext = createContext(null);
 export const useGlobalContext = () => useContext(GlobalContext);
 
 const GlobalProvider = ({ children }) => {
+  const cartItem = useSelector((state) => state?.cartItem?.items);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [totalQty, setTotalQty] = useState(0);
+  const [originalPrice, setOriginalPrice] = useState(0);
 
-    const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
-    const fetchCartItem = async () => {
-        try {
-          const response = await api({
-            ...SummaryApi.getCartItem,
-          })
-          const { data: responseData } = response;
-    
-          if (responseData.success) {
-            dispatch(setCartItems(responseData.data))
-            //console.log(responseData.data);   
-          }
-    
-        } catch (error) {
-          AxiosToastError(error)
-        }
+  const fetchCartItem = async () => {
+    try {
+      const response = await api({
+        ...SummaryApi.getCartItem,
+      });
+      const { data: responseData } = response;
+
+      if (responseData.success) {
+        dispatch(setCartItems(responseData.data));
+        //console.log(responseData.data);
       }
-  
+    } catch (error) {
+      AxiosToastError(error);
+    }
+  };
+
   const updateCartItem = async (id, qty) => {
     try {
       const response = await api({
         ...SummaryApi.updateCartItemQTY,
         data: {
           _id: id,
-          qty: qty
-        }
+          qty: qty,
+        },
       });
 
       const { data: responseData } = response;
@@ -71,7 +75,6 @@ const GlobalProvider = ({ children }) => {
           dispatch(removeFromCart(id));
         }
       }
-
     } catch (error) {
       AxiosToastError(error);
       return error;
@@ -91,7 +94,7 @@ const GlobalProvider = ({ children }) => {
 
       if (responseData.success) {
         // toast.success(responseData.message)
-         dispatch(upsertCartItem(responseData.data));
+        dispatch(upsertCartItem(responseData.data));
       }
     } catch (error) {
       AxiosToastError(error);
@@ -114,65 +117,85 @@ const GlobalProvider = ({ children }) => {
         if (responseData?.data) {
           dispatch(upsertCartItem(responseData.data));
         } else {
-          dispatch(removeFromCart(id))
+          dispatch(removeFromCart(id));
         }
       }
     } catch (error) {
       AxiosToastError(error);
     }
   };
-  
- const addToCart = async (productId) => {
-   try {
-     const response = await api({
-       ...SummaryApi.addToCart,
-       data: { productId },
-     });
 
-     const { data: responseData } = response;
+  const addToCart = async (productId) => {
+    try {
+      const response = await api({
+        ...SummaryApi.addToCart,
+        data: { productId },
+      });
 
-     if (responseData.success) {
-       dispatch(upsertCartItem(responseData?.data?.populatedItem));
-       return responseData;
-     }
-   } catch (error) {
-     AxiosToastError(error);
-   }
- };
+      const { data: responseData } = response;
 
-  
-  
+      if (responseData.success) {
+        dispatch(upsertCartItem(responseData?.data?.populatedItem));
+        return responseData;
+      }
+    } catch (error) {
+      AxiosToastError(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCartItem();
+  }, []);
+
+  //total item and total price
     useEffect(() => {
-        fetchCartItem()
-    },[])
+      const qty = cartItem.reduce((prev, curr) => {
+        return prev + curr.quantity
+      }, 0);
 
+      setTotalQty(qty);
+      
+      const totalPrice = cartItem.reduce((prev, curr) => {
+       const priceAfterDiscount = PriceWithDiscount(curr?.productId?.price, curr?.productId?.discount); 
+       return prev + (priceAfterDiscount * curr.quantity);
+      }, 0);
 
-const value = useMemo(
-  () => ({
-    fetchCartItem,
-    updateCartItem,
-    incrementCartItemQty,
-    decrementCartItemQty,
-    addToCart,
-  }),
-  [
-    fetchCartItem,
-    updateCartItem,
-    incrementCartItemQty,
-    decrementCartItemQty,
-    addToCart,
-  ]
-);
+      setTotalPrice(totalPrice);
 
+      const originalPrice = cartItem.reduce((prev, curr) => {
+       return prev + (curr?.productId?.price * curr.quantity);
+      }, 0);
 
-  
-    return (
-      <GlobalContext.Provider
-        value={value}
-      >
-        {children}
-      </GlobalContext.Provider>
-    );
+      setOriginalPrice(originalPrice);
+
+    }, [cartItem]);
+
+  const value = useMemo(
+    () => ({
+      fetchCartItem,
+      updateCartItem,
+      incrementCartItemQty,
+      decrementCartItemQty,
+      addToCart,
+      totalQty,
+      totalPrice,
+      originalPrice,
+    }),
+    [
+      fetchCartItem,
+      updateCartItem,
+      incrementCartItemQty,
+      decrementCartItemQty,
+      addToCart,
+      totalPrice,
+      totalQty,
+      originalPrice,
+    ]
+  );
+
+  return (
+    <GlobalContext.Provider value={value}>{children}</GlobalContext.Provider>
+  );
 };
 
 export default GlobalProvider;

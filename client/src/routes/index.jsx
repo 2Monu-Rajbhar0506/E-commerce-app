@@ -21,6 +21,8 @@ import AdminPermission from "../layout/AdminPermission.jsx";
 import RequireAuth from "../layout/RequireAuth.jsx";
 import ProductListPage from "../pages/Product/ProductListPage.jsx";
 import ProductDisplayPage from "../pages/Product/ProductDisplayPage.jsx";
+import DisplayCartItem from "../components/Product/DisplayCartItem.jsx";
+import CheckOutPage from "../pages/User/CheckOutPage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -134,14 +136,22 @@ const router = createBrowserRouter([
         children: [
           {
             path: ":subCategory",
-            element: <ProductListPage/>
-          }
-        ]
+            element: <ProductListPage />,
+          },
+        ],
       },
       {
         path: "product/:product",
-        element:<ProductDisplayPage/>
-      }
+        element: <ProductDisplayPage />,
+      },
+      {
+        path: "cart",
+        element: <DisplayCartItem />,
+      },
+      {
+        path: "checkout",
+        element: <CheckOutPage />,
+      },
     ],
   },
 ]);

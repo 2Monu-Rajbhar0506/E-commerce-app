@@ -74,7 +74,7 @@ export const getCartItemController = async (req, res) => {
         const cartItems = await CartProduct.find({ userId })
           .populate({
             path: "productId",
-            select: "name price images discount stock",
+            select: "name price images discount stock image unit",
           })
           .sort({ createdAt: -1 })
             .lean();

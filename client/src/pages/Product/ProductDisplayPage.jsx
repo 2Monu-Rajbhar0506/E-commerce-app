@@ -190,12 +190,6 @@ const ProductDisplayPage = () => {
             </div>
           </div>
 
-          {/*<div className="flex items-center gap-4 mt-4">
-            {data.discount && (
-              <p className="text-sm text-red-500">{data.discount}% OFF</p>
-            )}
-          </div>*/}
-
           <p
             className={`my-3 text-sm ${
               data.stock > 0 ? "text-green-600" : "text-red-600"
@@ -214,8 +208,6 @@ const ProductDisplayPage = () => {
               Add
             </button>
           )}
-
-          {/**/}
 
           <h2 className="font-semibold mt-6">Why shop from binkeyit?</h2>
 

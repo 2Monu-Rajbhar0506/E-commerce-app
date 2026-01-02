@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import "./App.css";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { Toaster } from "react-hot-toast";
@@ -12,10 +12,11 @@ import api from "./utils/Axios.js";
 import { setAllCategory,setAllSubCategory, setCategoryLoading } from "./store/productSlice.js";
 import AxiosToastError from "./utils/AxiosToastError.js";
 import GlobalProvider from "./provider/GlobalProvider.jsx";
+import CartMobile from "./components/Product/CartMobile.jsx";
 
 function App() {
   const dispatch = useDispatch();
-
+  const location = useLocation();
   // Fetch user details
   const fetchUser = async () => {
     try {
@@ -66,7 +67,6 @@ function App() {
     fetchUser();
     fetchCategory();
     fetchSubCategory();
-   // fetchCartItem();
   }, []);
 
   return (
@@ -77,6 +77,11 @@ function App() {
       </main>
       <Footer />
       <Toaster />
+      {
+        location.pathname !== '/checkout' && (
+          <CartMobile/>
+        )
+      }
     </GlobalProvider>
   );
 }
