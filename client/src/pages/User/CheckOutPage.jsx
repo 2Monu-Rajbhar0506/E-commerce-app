@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { DisplayPriceInRupees } from "../../utils/DisplayPriceInRupees";
 import { useGlobalContext } from "../../provider/GlobalProvider";
 import AddAddress from "../../components/User/AddAddress";
 import { useNavigate } from "react-router-dom";
+import AxiosToastError from "../../utils/AxiosToastError";
+import api from "../../utils/Axios";
+import SummaryApi from "../../common/summaryApi";
+import toast from "react-hot-toast";
+import { clearCart } from "../../store/cartProduct";
 
 const CheckOutPage = () => {
   const { originalPrice, totalPrice, totalQty } = useGlobalContext();
@@ -18,7 +23,73 @@ const CheckOutPage = () => {
   }, []);
 
   console.log(addressList[selectAddress]);
-  
+  const selectedAddress = addressList[selectAddress];
+  const dispatch = useDispatch()
+
+  const handleCashOnDelivery = async () => {
+    if (!selectAddress) {
+      return toast.error("Please select at least one address");
+    }
+      try {
+        const response = await api({
+          ...SummaryApi.cashOnDelivery,
+          data: {
+            list_items: cartItem,
+            totalAmt: totalPrice,
+            subTotalAmt: originalPrice,
+            addressId: selectedAddress._id,
+          },
+        });
+
+        const { data: responseData } = response;
+
+        if (responseData.success) {
+          toast.success(responseData.message);
+          dispatch(clearCart());
+        }
+        navigate("/success",{
+          state: {
+              text:"Order"
+            }
+        })
+      } catch (error) {
+        AxiosToastError(error);
+      }
+  }
+
+
+  const handleOnlinePayment = async () => {
+    try {
+      toast.loading("Loading...")
+      const response = await api({
+        ...SummaryApi.payment_Url,
+        data: {
+          list_items: cartItem,
+          addressId: selectedAddress._id,
+        },
+      });
+
+      const { data: responseData } = response;
+
+      if (responseData.success) {
+        window.location.href = responseData.data.url;
+        
+      }
+    } catch (error) {
+      AxiosToastError(error);
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
 
   return (
     <section className="bg-gray-50 min-h-screen py-6">
@@ -26,7 +97,6 @@ const CheckOutPage = () => {
         <h2 className="text-2xl font-semibold mb-6">Checkout</h2>
 
         <div className="flex flex-col lg:flex-row gap-6">
-         
           <div className="flex-1 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-5">
               <h3 className="text-lg font-semibold mb-3">Delivery Address</h3>
@@ -37,17 +107,16 @@ const CheckOutPage = () => {
                 </h3>
 
                 <div className="grid gap-4">
-                  {
-                    addressList.map((address, index) => {
-                          if (!address.is_active) return null;
+                  {addressList.map((address, index) => {
+                    if (!address.is_active) return null;
 
-                          const isSelected = selectAddress === String(index);
+                    const isSelected = selectAddress === String(index);
 
-                          return (
-                            <label
-                              key={address._id || index}
-                              htmlFor={`address-${index}`}
-                              className={`
+                    return (
+                      <label
+                        key={address._id || index}
+                        htmlFor={`address-${index}`}
+                        className={`
                                     relative cursor-pointer
                                     border rounded-xl p-4
                                     transition-all
@@ -59,7 +128,6 @@ const CheckOutPage = () => {
                                     }
                                   `}
                       >
-                        
                         <input
                           id={`address-${index}`}
                           type="radio"
@@ -87,7 +155,7 @@ const CheckOutPage = () => {
                           </p>
 
                           <p className="text-gray-800 font-medium">
-                             {address.mobile}
+                            {address.mobile}
                           </p>
                         </div>
 
@@ -158,12 +226,18 @@ const CheckOutPage = () => {
             </div>
 
             {/* PAYMENT ACTIONS */}
-            <div className="bg-white rounded-xl shadow-sm p-5 flex flex-col gap-3">
+            <div
+              onClick={handleOnlinePayment}
+              className="bg-white rounded-xl shadow-sm p-5 flex flex-col gap-3"
+            >
               <button className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
                 Pay Online
               </button>
 
-              <button className="w-full py-3 border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold rounded-lg transition">
+              <button
+                onClick={handleCashOnDelivery}
+                className="w-full py-3 border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-semibold rounded-lg transition"
+              >
                 Cash on Delivery
               </button>
             </div>

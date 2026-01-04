@@ -23,6 +23,8 @@ import ProductListPage from "../pages/Product/ProductListPage.jsx";
 import ProductDisplayPage from "../pages/Product/ProductDisplayPage.jsx";
 import DisplayCartItem from "../components/Product/DisplayCartItem.jsx";
 import CheckOutPage from "../pages/User/CheckOutPage.jsx";
+import Success from "../pages/User/Success.jsx";
+import Cancel from "../pages/User/Cancel.jsx";
 
 const router = createBrowserRouter([
   {
@@ -151,6 +153,14 @@ const router = createBrowserRouter([
       {
         path: "checkout",
         element: <CheckOutPage />,
+      },
+      {
+        path: "success",
+        element: <Success />,
+      },
+      {
+        path: "cancel",
+        element: <Cancel />,
       },
     ],
   },

@@ -146,20 +146,32 @@ const SummaryApi = {
   },
   addAddress: {
     url: "/api/address/create-address",
-    method: "POST"
+    method: "POST",
   },
   getAddress: {
     url: "/api/address/get",
-    method:"GET"
+    method: "GET",
   },
   updateAddress: {
     url: "/api/address/update",
-    method:"PUT"
+    method: "PUT",
   },
   deleteAddress: {
     url: "/api/address/delete",
-    method:"DELETE"
-  }
+    method: "DELETE",
+  },
+  cashOnDelivery: {
+    url: "/api/order/cash-on-delivery",
+    method: "POST",
+  },
+  payment_Url: {
+    url: "/api/order/checkout",
+    method: "POST"
+  },
+  getOrderDetails: {
+    url: "/api/order/get",
+    method: "GET"
+  },
 };
 
 export default SummaryApi;

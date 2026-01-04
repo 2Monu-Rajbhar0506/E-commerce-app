@@ -186,24 +186,36 @@ export const updateAddressController = async (req, res) => {
 
 
 export const deleteAddressController = async (req, res) => {
-  try {
-    const userId = req.userId;
+  const session = await mongoose.startSession();
 
+  try {
+    session.startTransaction();
+
+    const userId = req.userId;
     if (!userId) {
       return errorResponse(res, "Unauthorized user", 401);
     }
 
     const { _id } = req.body;
-
     if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
       return errorResponse(res, "Invalid address id", 400);
     }
 
-    const deletedAddress = await Address.findOneAndDelete({ _id, userId });
+    const deletedAddress = await Address.findOneAndDelete(
+      { _id, userId },
+      { session }
+    );
 
     if (!deletedAddress) {
+      await session.abortTransaction();
       return errorResponse(res, "Address not found", 404);
     }
+
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { address_details: _id } },
+      { session }
+    );
 
     // If deleted address was active
     if (deletedAddress.is_active) {
@@ -213,15 +225,20 @@ export const deleteAddressController = async (req, res) => {
       const anotherAddress = await Address.findOne(
         { userId },
         {},
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 }, session }
       );
-
       // If another address exists, activate it
       if (anotherAddress) {
-        anotherAddress.is_active = true;
-        await anotherAddress.save();
+        await Address.updateOne(
+          { _id: anotherAddress._id },
+          { $set: { is_active: true } },
+          { session }
+        );
       }
     }
+
+    await session.commitTransaction();
+    session.endSession();
 
     return successResponse(
       res,
@@ -230,8 +247,9 @@ export const deleteAddressController = async (req, res) => {
       200
     );
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error("Delete Address Error:", error);
     return errorResponse(res, "Failed to delete address", 500);
   }
 };
-

@@ -13,6 +13,8 @@ import subCategoryRouter from "./routes/SubCategoryRoutes.js";
 import productRouter from "./routes/productRouter.js";
 import cartRouter from "./routes/cartRouter.js";
 import addressRouter from "./routes/addressRouter.js";
+import orderRouter from "./routes/orderRouter.js";
+import { webhookStripe } from "./controllers/orderController.js";
 
 dotenv.config();
 
@@ -34,6 +36,12 @@ app.use(
   })
 );
 
+app.post(
+  "/api/order/webhook",
+  express.raw({ type: "application/json" }),
+  webhookStripe
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -53,6 +61,8 @@ app.get("/", (request, response) => {
         message:"server is running ✅"
     })
 })
+
+
 app.use(errorHandler);
 app.use("/api/user", userRouter);
 app.use("/api/category", categoryRouter);
@@ -61,6 +71,7 @@ app.use("/api/subcategory", subCategoryRouter);
 app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/address", addressRouter);
+app.use("/api/order", orderRouter);
 
 connectDB().then(() => {
     app.listen(PORT, () => {

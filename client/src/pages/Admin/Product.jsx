@@ -151,9 +151,9 @@ export default Product;*/
 
 
 import React, { useState, useEffect, useCallback } from "react";
-import AxiosToastError from "../../utils/AxiosToastError";
+import AxiosToastError from "../../utils/AxiosToastError.js";
 import api from "../../utils/Axios.js";
-import SummaryApi from "../../common/summaryApi";
+import SummaryApi from "../../common/summaryApi.js";
 import Loader from "../../components/Loader.jsx";
 import ProductCardAdmin from "../../components/Admin/ProductCardAdmin.jsx";
 import { RiSearchLine } from "react-icons/ri";
