@@ -33,7 +33,7 @@ const addressSchema = new mongoose.Schema(
     },
 
     mobile: {
-      type: String, 
+      type: String,
       required: [true, "Mobile number is required"],
       trim: true,
     },
@@ -41,6 +41,12 @@ const addressSchema = new mongoose.Schema(
     is_active: {
       type: Boolean,
       default: true,
+    },
+    
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   {

@@ -12,6 +12,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import subCategoryRouter from "./routes/SubCategoryRoutes.js";
 import productRouter from "./routes/productRouter.js";
 import cartRouter from "./routes/cartRouter.js";
+import addressRouter from "./routes/addressRouter.js";
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ app.use("/api/file", uploadRouter);
 app.use("/api/subcategory", subCategoryRouter);
 app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
+app.use("/api/address", addressRouter);
 
 connectDB().then(() => {
     app.listen(PORT, () => {

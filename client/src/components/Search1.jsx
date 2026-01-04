@@ -10,8 +10,9 @@ const Search1 = () => {
   const location = useLocation();
   const [isSearchPage, setIsSearchPage] = useState(false);
   const isMobile = useMobile();
-  const params = useLocation();
-  const searchText = params?.search?.slice(3);
+   const { search } = useLocation();
+   const searchText = new URLSearchParams(search).get("q") || "";
+
 
 
   useEffect(() => {
@@ -23,9 +24,10 @@ const Search1 = () => {
   };
 
   const handleOnChange = (e) => {
-    const value = e?.target?.value
-    const url = `/search?q=${value}`
-    navigate(url)
+     const rawValue = e.target.value;
+     const value = rawValue.trim();
+     const url = `/search?q=${value}`
+     navigate(url)
   }
 
   return (
@@ -95,7 +97,7 @@ const Search1 = () => {
               placeholder="Search your item here..."
               className="grow px-3 py-2 text-sm md:text-base outline-none font-primary  w-full h-full"
               onChange={handleOnChange}
-              defaultValue={searchText}
+              defaultValue={searchText?.trim() || ""}
             />
           </div>
         )}

@@ -11,11 +11,13 @@ import AxiosToastError from "../utils/AxiosToastError";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { FiBox, FiUpload, FiFolder, FiLayers } from "react-icons/fi";
 import isAdmin from "../utils/isAdmin";
+import { useGlobalContext } from "../provider/GlobalProvider.jsx";
 
 const UserMenu = ({ close }) => {
   const user = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { handleLogout2 } = useGlobalContext();
 
   const handleLogout = async() => {
     try {
@@ -28,7 +30,7 @@ const UserMenu = ({ close }) => {
           close();
         }
         dispatch(logoutUser());
-        localStorage.clear();
+        handleLogout2();
         toast.success(response?.data?.message);
         navigate("/")
       }

@@ -63,3 +63,4 @@ html{
 .scrollbarCustom::-webkit-scrollbar-thumb{
    @apply bg-amber-200  rounded-full
 }
+

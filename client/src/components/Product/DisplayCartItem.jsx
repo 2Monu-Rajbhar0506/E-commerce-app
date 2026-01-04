@@ -1,6 +1,6 @@
 import React from "react";
 import { IoClose } from "react-icons/io5";
-import { Link } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import { useGlobalContext } from "../../provider/GlobalProvider";
 import { DisplayPriceInRupees } from "../../utils/DisplayPriceInRupees";
 import { FaCaretRight } from "react-icons/fa";
@@ -9,10 +9,26 @@ import AddToCartButton from "./AddToCartButton";
 import { PriceWithDiscount } from "../../utils/PriceWithDiscount";
 import imageEmpty from "../../assets/empty_cart.webp"
 
+
 const DisplayCartItem = ({ close }) => {
     const { originalPrice, totalPrice, totalQty } = useGlobalContext();
     const cartItem = useSelector((state) => state.cartItem.items);
-
+    const user = useSelector(state => state.user)
+    const navigate = useNavigate();
+  // console.log("User details:",user);
+    
+  const redirectToCheckoutPage = () => {
+    if (user?._id) {
+      navigate("/checkout");
+      if (close) {
+        close();
+      }
+      return
+    } else {
+      toast.error("Please Login")
+    }
+  }
+  
   return (
     <section className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
       <div className="ml-auto h-screen w-full max-w-md bg-white flex flex-col">
@@ -20,11 +36,17 @@ const DisplayCartItem = ({ close }) => {
         <div className="flex items-center justify-between px-4 py-4 shadow-sm border-b border-gray-300">
           <h2 className="text-lg font-semibold">My Cart</h2>
 
-          <Link to="/" className="lg:hidden bg-gray-200 rounded text-gray-700 hover:bg-gray-300 transition">
+          <Link
+            to="/"
+            className="lg:hidden bg-gray-200 rounded text-gray-700 hover:bg-gray-300 transition"
+          >
             <IoClose size={24} />
           </Link>
 
-          <button onClick={close} className="hidden lg:block bg-gray-200 rounded text-gray-700 hover:bg-gray-300 transition">
+          <button
+            onClick={close}
+            className="hidden lg:block bg-gray-200 rounded text-gray-700 hover:bg-gray-300 transition"
+          >
             <IoClose size={24} />
           </button>
         </div>
@@ -90,44 +112,46 @@ const DisplayCartItem = ({ close }) => {
             )}
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm flex flex-col gap-2">
-            <h3 className="text-sm font-semibold text-gray-700 border-b pb-1">
-              Bill Details
-            </h3>
+          {Array.isArray(cartItem) && cartItem.length > 0 && (
+            <div className="bg-white rounded-xl p-4 shadow-sm flex flex-col gap-2">
+              <h3 className="text-sm font-semibold text-gray-700 border-b pb-1">
+                Bill Details
+              </h3>
 
-            {/* Items Total */}
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Total Items</span>
-              <span className="flex items-center gap-2">
-                <span className="line-through text-gray-400">
-                  {DisplayPriceInRupees(originalPrice)}
+              {/* Items Total */}
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Total Items</span>
+                <span className="flex items-center gap-2">
+                  <span className="line-through text-gray-400">
+                    {DisplayPriceInRupees(originalPrice)}
+                  </span>
+                  <span className="font-medium text-gray-800">
+                    {DisplayPriceInRupees(totalPrice)}
+                  </span>
                 </span>
-                <span className="font-medium text-gray-800">
+              </div>
+
+              {/* Quantity */}
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Total Quantity</span>
+                <span className="font-medium">{totalQty} items</span>
+              </div>
+
+              {/* Delivery */}
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Delivery Charge</span>
+                <span className="text-green-600 font-medium">FREE</span>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t pt-2 flex justify-between items-center text-base font-semibold text-gray-900">
+                <span>Grand Total</span>
+                <span className="text-green-700">
                   {DisplayPriceInRupees(totalPrice)}
                 </span>
-              </span>
+              </div>
             </div>
-
-            {/* Quantity */}
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Total Quantity</span>
-              <span className="font-medium">{totalQty} items</span>
-            </div>
-
-            {/* Delivery */}
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Delivery Charge</span>
-              <span className="text-green-600 font-medium">FREE</span>
-            </div>
-
-            {/* Divider */}
-            <div className="border-t pt-2 flex justify-between items-center text-base font-semibold text-gray-900">
-              <span>Grand Total</span>
-              <span className="text-green-700">
-                {DisplayPriceInRupees(totalPrice)}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -137,8 +161,11 @@ const DisplayCartItem = ({ close }) => {
               {DisplayPriceInRupees(totalPrice)}
             </span>
 
-            {cartItem[0] ? (
-              <button className="flex items-center gap-2 font-semibold hover:opacity-90 transition">
+            {Array.isArray(cartItem) && cartItem.length > 0 ? (
+              <button
+                onClick={redirectToCheckoutPage}
+                className="flex items-center gap-2 font-semibold hover:opacity-90 transition"
+              >
                 Proceed
                 <FaCaretRight />
               </button>

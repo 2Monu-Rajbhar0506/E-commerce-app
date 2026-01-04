@@ -2,9 +2,10 @@ import { createContext, useContext, useEffect,useMemo, useState } from "react";
 import api from "../utils/Axios";
 import SummaryApi from "../common/summaryApi";
 import { useDispatch, useSelector } from "react-redux";
-import { removeFromCart, setCartItems, upsertCartItem } from "../store/cartProduct";
+import { removeFromCart, setCartItems, upsertCartItem, clearCart } from "../store/cartProduct";
 import AxiosToastError from "../utils/AxiosToastError";
 import { PriceWithDiscount } from "../utils/PriceWithDiscount";
+import { handleAddAddress } from "../store/addressSlice";
 
 
 // GOLDEN RULE (very important)
@@ -36,6 +37,7 @@ const GlobalProvider = ({ children }) => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [totalQty, setTotalQty] = useState(0);
   const [originalPrice, setOriginalPrice] = useState(0);
+  const userDetails = useSelector(state => state.user)
 
   const dispatch = useDispatch();
 
@@ -51,7 +53,9 @@ const GlobalProvider = ({ children }) => {
         //console.log(responseData.data);
       }
     } catch (error) {
-      AxiosToastError(error);
+      if (error?.response?.status !== 401) {
+        AxiosToastError(error);
+      }
     }
   };
 
@@ -143,9 +147,44 @@ const GlobalProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
+
+  const fetchAddress = async() => {
+    try {
+      const response = await api({
+        ...SummaryApi.getAddress,
+      })
+
+      const { data: responseData } = response;
+      
+      if (responseData.success) {
+        //console.log(responseData);
+        dispatch(handleAddAddress(responseData.data))
+      }
+
+    } catch (error) {
+      if (error?.response?.status !== 401) {
+        AxiosToastError(error);
+      }
+    }
+  }
+
+
+
+//used in userMenu file
+const handleLogout2 = () => {
+  localStorage.clear();
+  dispatch(clearCart());
+  dispatch(handleAddAddress([])); // optional
+};
+
+
+useEffect(() => {
+  if (userDetails?._id) {
     fetchCartItem();
-  }, []);
+    fetchAddress();
+  }
+}, [userDetails]);
+
 
   //total item and total price
     useEffect(() => {
@@ -180,6 +219,7 @@ const GlobalProvider = ({ children }) => {
       totalQty,
       totalPrice,
       originalPrice,
+      handleLogout2,
     }),
     [
       fetchCartItem,
@@ -190,6 +230,7 @@ const GlobalProvider = ({ children }) => {
       totalPrice,
       totalQty,
       originalPrice,
+      handleLogout2,
     ]
   );
 
