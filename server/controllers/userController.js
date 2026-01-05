@@ -9,27 +9,15 @@ import { v2 as cloudinary } from "cloudinary";
 import { generateHashedOtp } from "../utils/generateOtp.js";
 import forgotPasswordTemplate from "../utils/forgotPasswordTemplate.js";
 import jwt from "jsonwebtoken";
+import { errorResponse, successResponse } from "../utils/response.js";
 
 export async function registerUser(req, res) {
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "Provide email, name, and password",
-        error: true,
-        success: false,
-      });
-    }
-
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
-      return res.status(400).json({
-        message: "User already registered",
-        error: true,
-        success: false,
-      });
+      return errorResponse(res, "User already registered", 400);
     }
 
    
@@ -67,18 +55,15 @@ export async function registerUser(req, res) {
       }),
     });
 
-    return res.status(201).json({
-      message: "User registered successfully,Check your email for verification link.",
-      error: false,
-      success: true,
-      data: savedUser,
-    });
+    return successResponse(
+      res,
+      "User registered successfully,Check your email for verification link.",
+      savedUser,
+      201
+    );
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || error,
-      error: true,
-      success: false,
-    });
+    console.error("Register user error:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -99,31 +84,20 @@ export async function verifyEmail(req, res) {
         });
 
         if (!user) {
-            return res.status(400).json({
-                message: "Invalid or expired token",
-                error: true,
-                success: false
-            })
+          return errorResponse(res, "Invalid or expired token", 400);
         }
         
         user.verify_email = true;
-        user.verifyEmailToken = "";
-        user.verifyEmailExpireAt = "";
+        user.verifyEmailToken = null;
+        user.verifyEmailExpireAt = null;
 
         await user.save();
 
-        return res.json({
-            message: "Email verified successfully",
-            success: true,
-            error:false
-        })
+        return successResponse(res, "Email verified successfully", 200);
 
     } catch (error) {
-        return res.status(500).json({
-            message: error.message || "Internal server error",
-            error: true,
-            success: false
-        })
+      console.error("verify user email error:", error);
+      return errorResponse(res, error.message || "Internal server error", 500);
     }
 }
 
@@ -135,19 +109,11 @@ export async function resendVerifyEmailController(req, res) {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-        error: true,
-        success: false,
-      });
+      return errorResponse(res, "User not found", 404);
     }
 
     if (user.verify_email) {
-      return res.status(400).json({
-        message: "Email already verified",
-        error: true,
-        success: false,
-      });
+      return errorResponse(res, "Email already verified", 400);
     }
 
     // Create new token
@@ -170,17 +136,11 @@ export async function resendVerifyEmailController(req, res) {
       }),
     });
 
-    return res.json({
-      message: "Verification email resent",
-      success: true,
-      error: false,
-    });
+    return successResponse(res, "Verification email resent", 200);
+
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      error: true,
-      success: false,
-    });
+    console.error(" resend verify user email error:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -188,28 +148,14 @@ export async function loginController(req, res) {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Provide email and password",
-        success: false,
-        error: true,
-      });
-    }
-
     //fetch only needed fields
     const user = await User.findOne({ email }).select(
-      " -forgot_password_otp -forgot_password_expiry -verifyEmailToken -verifyEmailExpireAt "
+      "-forgot_password_otp -forgot_password_expiry -verifyEmailToken -verifyEmailExpireAt "
     );
 
-
     
-
     if (!user) {
-      return res.status(400).json({
-        message: "User not registered",
-        success: false,
-        error: true,
-      });
+      return errorResponse(res, "User not registered", 400);
     }
 
     // Block until email is verified
@@ -224,33 +170,29 @@ export async function loginController(req, res) {
 
     // block inactive users
     if (user.status !== "Active") {
-      return res.status(403).json({
-        message: "Your account is not active. Contact to admin",
-        success: false,
-        error: true,
-      });
+      return errorResponse(res, "Your account is not active. Contact to admin", 403);
     }
 
     const PasswordCorrect = await bcryptjs.compare(password, user.password);
 
     if (!PasswordCorrect) {
-      return res.status(400).json({
-        message: "Invalid password",
-        success: false,
-        error: true,
-      });
+      return errorResponse(res, "Invalid password", 400);
     }
 
     const { accessToken, refreshToken } = generateTokens(user._id);
 
     //update the last login date and refresh token in database
-    const resp = await User.findByIdAndUpdate(user._id, {
-      last_login_date: new Date(),
-      refresh_token: refreshToken,
-    });
+    // await User.findByIdAndUpdate(user._id, {
+    //   last_login_date: new Date(),
+    //   refresh_token: refreshToken,
+    // });
+
+    user.last_login_date = new Date();
+    user.refresh_token = refreshToken;
+    await user.save();
+
 
    
-    
 
     const cookieOptions = {
       httpOnly: true,
@@ -263,22 +205,20 @@ export async function loginController(req, res) {
     res.cookie("accessToken", accessToken, cookieOptions);
     res.cookie("refreshToken", refreshToken, cookieOptions);
 
-    return res.json({
-      message: "Login successfull",
-      success: true,
-      error: false,
-      data: {
+    return successResponse(
+      res,
+      "Login successful",
+      {
         user,
         accessToken,
         refreshToken,
       },
-    });
+      200
+    );
+
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      success: false,
-      error: true
-    })
+    console.error("login controller error:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -287,11 +227,7 @@ export async function logoutController(req, res) {
     const userId = req.userId;
   
     if (!userId) {
-      return res.status(401).json({
-        message: "User not logged in",
-        success: false,
-        error: true
-      });
+      return errorResponse(res, "User not logged in", 401);
     }
   
     const cookieOptions = {
@@ -307,17 +243,11 @@ export async function logoutController(req, res) {
     //Remove refresh token from database
     await User.findByIdAndUpdate(userId, { refresh_token: "" }, { new: true });
   
-    return res.json({
-      message: "Logout successfull",
-      success: true,
-      error: false,
-    });
+    return successResponse(res, "Logout successfull", 200);
+
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      success: false,
-      error: true,
-    });
+    console.error("Logout controller error:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -328,22 +258,14 @@ export async function uploadAvatar(req, res) {
     const image = req.file;
 
     if (!image) {
-      return res.status(400).json({
-        message: "No image provided",
-        success: false,
-        error: true
-      }); 
+      return errorResponse(res, "No image provided", 400);
     }
 
 
     const upload = await uploadImageCloudinary(image);
 
     if (!upload || !upload.secure_url) {
-      return res.status(500).json({
-        message: "image upload failed",
-        success: false,
-        error: true
-      });
+      return errorResponse(res, "image upload failed", 500);
     }
 
  
@@ -362,24 +284,19 @@ export async function uploadAvatar(req, res) {
       { new: true }
     );
 
-    return res.json({
-      message: "Profile picture uploaded",
-      success: true,
-      error: false,
-      data: {
-        _id: updatedUser._id,
-        avatar: updatedUser.avatar,
+    return successResponse(
+      res,
+      "Profile picture uploaded",
+      {
+      _id: updatedUser._id,
+      avatar: updatedUser.avatar,
       },
-    });
-
-
+      200
+    );
 
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || error,
-      error: true,
-      success: false
-    });
+    console.error("Upload Avatar Image Error:", error);
+    return errorResponse(res, error.message || error, 500);
   }
 }
 
@@ -391,29 +308,15 @@ export async function updateUserDetails(req, res) {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-        success: false,
-        error: true,
-      });
+      return errorResponse(res, "User not found", 404);
     }
-
-    console.log(user.email);
-    
 
     //prevent updating of the duplicate emails, means each user has uniques emails
     if (email && email !== user.email) {
       const emailExists = await User.findOne({ email });
 
-      console.log(emailExists);
-      
-
       if (emailExists) {
-        return res.status(400).json({
-          message: "Email already in use",
-          success: true,
-          error: true
-        });
+        return errorResponse(res, "Email already in use", 400);
       }
     }
 
@@ -438,19 +341,12 @@ export async function updateUserDetails(req, res) {
       { new: true },
     ).select("-password -refresh_token");
 
-    return res.json({
-      message: "Updated successfully",
-      success: true,
-      error: false,
-      data: updatedUser
-    });
+
+    return successResponse(res, "Updated successfully", updatedUser, 200);
 
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      error: true,
-      success: false,
-    });
+    console.error("Update user controller error", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -459,22 +355,10 @@ export async function forgotPasswordController(req, res) {
   try {
     const { email } = req.body;
 
-    if (!email || email.trim() === "") {
-      return res.status(400).json({
-        message: "Email is required",
-        success: false,
-        error: true,
-      });
-    }
-
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({
-        message: "Email not found",
-        success: false,
-        error: true,
-      });
+      return errorResponse(res, "user not found", 400);
     }
 
     // generate OTP + hash version
@@ -506,19 +390,10 @@ export async function forgotPasswordController(req, res) {
       }),
     });
 
-    
-    return res.json({
-      message: "OTP has been sent to your email",
-      success: true,
-      error: false,
-    });
+    return successResponse(res, "OTP has been sent to your email", 200);
   } catch (error) {
     console.error("Forgot Password Error:", error);
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      success: false,
-      error: true,
-    });
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -527,22 +402,10 @@ export async function resendForgotPasswordOtp(req, res) {
   try {
     const { email } = req.body;
 
-    if (!email || email.trim() === "") {
-      return res.status(400).json({
-        message: "Email is required",
-        success: false,
-        error: true,
-      });
-    }
-
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({
-        message: "Email not found",
-        success: false,
-        error: true,
-      });
+      return errorResponse(res, "Email not found", 400);
     }
 
     // generate new OTP + hashed otp
@@ -571,18 +434,10 @@ export async function resendForgotPasswordOtp(req, res) {
       }),
     });
 
-    return res.json({
-      message: "New OTP has been sent to your email",
-      success: true,
-      error: false,
-    });
+    return successResponse(res, "New OTP has been sent to your email", 200);
   } catch (error) {
     console.error("Resend OTP Error:", error);
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      success: false,
-      error: true,
-    });
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -591,43 +446,22 @@ export async function verifyForgotPassword(req, res) {
   try {
     const { email, otp } = req.body;
 
-    if (!email || !otp) { 
-      return res.status(400).json({
-        message: "Provide required fields: email, otp",
-        error: true,
-        success: false
-      });
-    }
-
     const user = await User.findOne({ email });
  
-    
     if (!user) {
-      return res.status(400).json({
-        message: "Email not found.",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "Email not found.", 400);
     }
 
     //check expiry
     if (!user.forgot_password_expiry || !user.forgot_password_otp) {
-          return res.status(400).json({
-              message: "OTP not generated for this email.",
-              error: true,
-              success: false
-          });
-      }
+        return errorResponse(res, "OTP not generated for this email.", 400);
+    }
 
     const currentTime = new Date();
     const expiryTime = new Date(user.forgot_password_expiry);
 
     if (currentTime > expiryTime) {
-      return res.status(400).json({
-        message: "OTP has expired",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "OTP has expired", 400);
     }
 
     const hashedOtp = crypto
@@ -637,11 +471,7 @@ export async function verifyForgotPassword(req, res) {
   
     //comparing the hashed values
     if (hashedOtp !== user.forgot_password_otp) {
-      return res.status(400).json({
-        message: "Invalid OTP",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "Invalid OTP", 400);
     }
 
     //if otp is correct then clear the fields
@@ -650,19 +480,11 @@ export async function verifyForgotPassword(req, res) {
       forgot_password_expiry: null,
     });
 
-    return res.json({
-      message: "OTP verified successfully.",
-      error: false,
-      success: true
-    });
-
+    return successResponse(res, "OTP verified successfully.", 200);
 
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      error: true,
-      success: false
-    });
+    console.error("verify Forgot Password controller:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -670,39 +492,19 @@ export async function resetPassword(req, res) {
   try {
     const { email, newPassword, confirmPassword } = req.body;
 
-    if (!email || !newPassword || !confirmPassword) {
-      return res.status(400).json({
-        message: " Provide required fields: email, newPassword, confirmPassword",
-        error: true,
-        success: false
-      });
-    }
-
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({
-        message: "Email is not available.",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "Email is not available.", 400);
     }
 
     if (newPassword !== confirmPassword) {
-      return res.status(400).json({
-        message: "newPassword and confirmPassword must be the same.",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "newPassword and confirmPassword must be the same.", 400);
     }
 
     //check otp is verified before password reset
     if (user.forgot_password_otp || user.forgot_password_expiry) {
-      return res.status(400).json({
-        message: "OTP verification required before restting password.",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "OTP verification required before restting password.", 400);
     }
 
     const salt = await bcryptjs.genSalt(10);
@@ -714,18 +516,11 @@ export async function resetPassword(req, res) {
       { new: true }
     );
 
-    return res.json({
-      message: "Password updated successfully.",
-      error: false,
-      success: true
-    });
+    return successResponse(res, "Password updated successfully.", 200);
 
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      error: true,
-      success: false,
-    });
+    console.error("reset password controller error:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -739,11 +534,7 @@ export async function refreshToken(req, res) {
     const oldRefreshToken = req?.cookies?.refreshToken || tokenFromHeader;
 
     if (!oldRefreshToken) {
-      return res.status(401).json({
-        message: "Missing refresh token",
-        error: true,
-        success: false,
-      });
+      return errorResponse(res, "Missing refresh token", 401);
     }
 
     let decodedToken;
@@ -752,11 +543,7 @@ export async function refreshToken(req, res) {
       decodedToken = jwt.verify(oldRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     } catch (error) {
-      return res.status(401).json({
-        message: "Invalid or expired refresh token",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "Invalid or expired refresh token", 401);
     }
 
     const userId = decodedToken?.userId;
@@ -765,11 +552,7 @@ export async function refreshToken(req, res) {
     const user = await User.findById(userId);
 
     if (!user || user.refresh_token !== oldRefreshToken) {
-      return res.status(401).json({
-        message: "Refresh token is not valid anymore",
-        error: true,
-        success: false,
-      });
+      return errorResponse(res, "Refresh token is not valid anymore", 401);
     }
 
     //generate new tokens
@@ -796,22 +579,19 @@ export async function refreshToken(req, res) {
     res.cookie("accessToken", accessToken, accessCookieOptions);
     res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
-    return res.json({
-      message: "New access & refresh tokens generated",
-      error: false,
-      success: true,
-      data: {
+    return successResponse(
+      res,
+      "New access & refresh tokens generated",
+      {
         accessToken: accessToken,
         refreshToken: refreshToken,
-      }
-    });
+      },
+      200
+    );
 
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      error: true,
-      success: false
-    });
+    console.error("refresh token controller error:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 
@@ -821,36 +601,19 @@ export async function userDetails(req, res) {
     const userId = req.userId;
 
     if (!userId) {
-      return res.status(401).json({
-        message: "Unauthorized: userId not found",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "Unauthorized: userId not found", 401);
     }
 
     const user = await User.findById(userId).select(" -password -refresh_token -forgot_password_otp -forgot_password_expiry -verifyEmailExpireAt -verifyEmailToken ")
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-        error: true,
-        success: false
-      });
+      return errorResponse(res, "User not found", 404);
     }
 
-    return res.json({
-      message: "User details fetched successfully",
-      error: false,
-      success: true,
-      data: user
-    });
-
+    return successResponse(res, "User details fetched successfully", user, 200);
   } catch (error) {
-    return res.status(500).json({
-      message: error.message || "Internal server error",
-      error: true,
-      success: false
-    });
+    console.error("user details controller error:", error);
+    return errorResponse(res, error.message || "Internal server error", 500);
   }
 }
 

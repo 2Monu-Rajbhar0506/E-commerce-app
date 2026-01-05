@@ -29,12 +29,13 @@ const userSchema = new mongoose.Schema(
     },
     verifyEmailToken: {
       type: String,
-      default: "",
+      default: null,
     },
     verifyEmailExpireAt: {
-      type: Number,
-      default: 0,
+      type: Date,
+      default: null,
     },
+
     verify_email: {
       type: Boolean,
       default: false,
