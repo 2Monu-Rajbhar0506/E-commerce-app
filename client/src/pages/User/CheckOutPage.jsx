@@ -27,9 +27,9 @@ const CheckOutPage = () => {
   const dispatch = useDispatch()
 
   const handleCashOnDelivery = async () => {
-    if (!selectAddress) {
-      return toast.error("Please select at least one address");
-    }
+    // if (!selectAddress) {
+    //   return toast.error("Please select at least one address");
+    // }
       try {
         const response = await api({
           ...SummaryApi.cashOnDelivery,
@@ -73,7 +73,6 @@ const CheckOutPage = () => {
 
       if (responseData.success) {
         window.location.href = responseData.data.url;
-        
       }
     } catch (error) {
       AxiosToastError(error);
@@ -226,11 +225,11 @@ const CheckOutPage = () => {
             </div>
 
             {/* PAYMENT ACTIONS */}
-            <div
-              onClick={handleOnlinePayment}
-              className="bg-white rounded-xl shadow-sm p-5 flex flex-col gap-3"
-            >
-              <button className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+            <div className="bg-white rounded-xl shadow-sm p-5 flex flex-col gap-3">
+              <button
+                onClick={handleOnlinePayment}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+              >
                 Pay Online
               </button>
 

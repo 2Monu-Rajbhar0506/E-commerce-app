@@ -6,6 +6,7 @@ import { removeFromCart, setCartItems, upsertCartItem, clearCart } from "../stor
 import AxiosToastError from "../utils/AxiosToastError";
 import { PriceWithDiscount } from "../utils/PriceWithDiscount";
 import { handleAddAddress } from "../store/addressSlice";
+import { setOrders } from "../store/orderSlice";
 
 
 // GOLDEN RULE (very important)
@@ -168,6 +169,23 @@ const GlobalProvider = ({ children }) => {
     }
   }
 
+ const fetchOrder = async () => {
+   try {
+     const response = await api({
+       ...SummaryApi.getOrderDetails,
+     });
+     const { data: responseData } = response;
+
+     if (responseData.success) {
+       dispatch(setOrders(responseData.data));
+     }
+   } catch (error) {
+     if (error?.response?.status !== 401) {
+       AxiosToastError(error);
+     }
+   }
+ };
+
 
 
 //used in userMenu file
@@ -182,6 +200,7 @@ useEffect(() => {
   if (userDetails?._id) {
     fetchCartItem();
     fetchAddress();
+    fetchOrder();
   }
 }, [userDetails]);
 
@@ -220,6 +239,7 @@ useEffect(() => {
       totalPrice,
       originalPrice,
       handleLogout2,
+      fetchOrder,
     }),
     [
       fetchCartItem,
@@ -231,6 +251,7 @@ useEffect(() => {
       totalQty,
       originalPrice,
       handleLogout2,
+      fetchOrder,
     ]
   );
 

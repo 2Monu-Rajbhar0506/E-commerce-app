@@ -107,7 +107,7 @@ const Profile = () => {
     
     
   return (
-    <div className="p-4">
+    <div className="p-4 min-h-screen">
       {/* ---------------------- PROFILE HEADER ---------------------- */}
       <div className="flex items-center gap-6 mb-6">
         {/* Avatar */}

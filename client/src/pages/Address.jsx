@@ -42,7 +42,7 @@ const Address = () => {
   };
 
   return (
-    <div className="w-full px-3 sm:px-6 py-4 max-h-[80vh] overflow-auto min-h-[80vh]">
+    <div className="w-full px-3 sm:px-6 py-4 max-h-[82vh] overflow-auto min-h-screen">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <FiMapPin className="text-blue-600 text-lg" />

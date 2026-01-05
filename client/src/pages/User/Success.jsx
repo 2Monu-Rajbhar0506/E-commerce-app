@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaCheckCircle } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { clearCart } from "../../store/cartProduct";
 
 const Success = () => {
   const location = useLocation();
   const message = location?.state?.text || "Payment";
+  const dispatch = useDispatch();
+
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">

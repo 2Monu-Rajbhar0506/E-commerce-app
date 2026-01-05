@@ -47,7 +47,7 @@ const UserMenu = ({ close }) => {
 
 
   return (
-    <div className="text-gray-800 min-w-56 ">
+    <div className="text-gray-800 min-w-56 min-h-screen ">
       {/* Header */}
       <div className="flex items-center gap-2 mb-1 ">
         <FiUser className="text-xl text-indigo-600" />

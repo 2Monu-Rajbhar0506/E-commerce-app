@@ -229,7 +229,7 @@ const Product = () => {
   };
 
   return (
-    <section>
+    <section className="min-h-screen">
       <div className="p-2 bg-white shadow-md flex items-center justify-between gap-4">
         <h2 className="font-semibold">Product</h2>
 
@@ -262,7 +262,11 @@ const Product = () => {
         <div className="p-4 bg-blue-50 rounded-xl shadow-sm">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-9 min-h-[55vh]">
             {products.map((product) => (
-              <ProductCardAdmin key={product._id} data={product} fetchProduct={ fetchProducts } />
+              <ProductCardAdmin
+                key={product._id}
+                data={product}
+                fetchProduct={fetchProducts}
+              />
             ))}
           </div>
 

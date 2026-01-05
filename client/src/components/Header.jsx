@@ -69,7 +69,7 @@ const Header = () => {
             </button>
 
             {/* Desktop User Menu */}
-            <div className="hidden lg:flex items-center gap-5 ">
+            <div className="hidden lg:flex items-center gap-5">
               {user?._id ? (
                 <div className="relative ">
                   <div
@@ -85,9 +85,38 @@ const Header = () => {
                     )}
                   </div>
 
-                  {openUserMenu && (
-                    <div className="absolute right-0 top-12 z-50">
-                      <div className="bg-white rounded-lg p-4 min-w-52 lg:shadow-lg animate-fadeIn">
+                  {(openUserMenu && user.role === "ADMIN") && (
+                    <div className="absolute right-0 top-10 z-50 mt-3">
+                      <div
+                        className="
+                          bg-white
+                          rounded-lg
+                          p-4
+                          min-w-52
+                          lg:shadow-lg
+                          animate-fadeIn
+                          max-h-[360px]
+                          overflow-hidden
+                        "
+                       >
+                        <UserMenu close={handleCloseUserMenu} />
+                      </div>
+                    </div>
+                  )}
+                  {(openUserMenu && user.role === "USER") && (
+                    <div className="absolute right-0 top-10 z-50 mt-3">
+                      <div
+                        className="
+                          bg-white
+                          rounded-lg
+                          p-4
+                          min-w-52
+                          lg:shadow-lg
+                          animate-fadeIn
+                          max-h-[200px]
+                          overflow-hidden
+                        "
+                       >
                         <UserMenu close={handleCloseUserMenu} />
                       </div>
                     </div>

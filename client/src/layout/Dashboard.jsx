@@ -10,7 +10,7 @@ const Dashboard = () => {
     <section className="bg-[#eef3f8] min-h-screen w-full">
       <div className="flex">
         {/* LEFT SIDEBAR */}
-        <aside className="hidden lg:flex flex-col bg-white shadow-sm border-r w-[260px]  sticky top-22 max-h-[calc(100vh-96px)] p-4">
+        <aside className="hidden lg:flex flex-col bg-white shadow-sm border-r w-[260px] min-h-screen sticky top-0 max-h-[calc(100vh-96px)] p-4">
           <UserMenu />
         </aside>
 

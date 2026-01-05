@@ -15,12 +15,19 @@ export const CashOnDeliveryOrderController = async (req, res) => {
      if (!list_items || list_items.length === 0) {
        return errorResponse(res, "Cart is empty", 400);
      }
+     const paymentId = `PYD-${new mongoose.Types.ObjectId()}`;
 
      // build order items snapshot
+     //images: el.productId.image,
      const items = list_items.map((el) => ({
        productId: el.productId._id,
        name: el.productId.name,
-       images: el.productId.image,
+       images: Array.isArray(el.productId.image)
+         ? el.productId.image
+         : el.productId.image
+         ? [el.productId.image]
+         : [],
+
        quantity: el.quantity,
        priceAtPurchase: el.productId.price,
      }));
@@ -29,7 +36,7 @@ export const CashOnDeliveryOrderController = async (req, res) => {
        userId,
        orderId: `ORD-${Date.now()}`,
        items,
-       paymentId: "",
+       paymentId: paymentId,
        payment_status: "PENDING",
        delivery_address: addressId,
        delivery_status: "PLACED",
@@ -151,23 +158,39 @@ const mapStripePaymentStatus = (stripeStatus) => {
   }
 };
 
+
 const buildOrderItems = async (lineItems) => {
-  const products = await Promise.all(
-    lineItems.data.map((item) => stripe.products.retrieve(item.price.product))
+  return Promise.all(
+    lineItems.data.map(async (item) => {
+      const stripeProduct = await stripe.products.retrieve(item.price.product);
+
+      const product = await Product.findById(
+        stripeProduct.metadata.productId
+      ).lean();
+
+      if (!product) {
+        return errorResponse("Product not found while creating order");
+      }
+
+      return {
+        productId: product._id,
+        name: product.name,
+
+        // ✅ ALWAYS ARRAY (matches schema & COD flow)
+        images: Array.isArray(product.image)
+          ? product.image
+          : product.image
+          ? [product.image]
+          : [],
+
+        quantity: item.quantity || 1,
+        priceAtPurchase: item.amount_total / 100,
+      };
+    })
   );
-
-  return lineItems.data.map((item, index) => {
-    const product = products[index];
-
-    return {
-      productId: product.metadata.productId,
-      name: product.name,
-      image: product.images?.[0] || null,
-      quantity: item.quantity || 1,
-      priceAtPurchase: item.amount_total / 100,
-    };
-  });
 };
+
+
 
 
 export const webhookStripe = async (req, res) => {
@@ -176,20 +199,23 @@ export const webhookStripe = async (req, res) => {
 
   let event;
 
-  //Verify webhook signature
+  // Verify Stripe signature (RAW BODY REQUIRED)
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (error) {
-    console.error("Webhook signature verification failed:", error.message);
-    return errorResponse(res, `Webhook Error: ${error.message}`, 400);
+  } catch (err) {
+    console.error("Stripe signature verification failed:", err.message);
+    return errorResponse(res, `Webhook Error: ${err.message}`, 400);
   }
 
   try {
-    //Handle only the required event
+    // Checkout completed
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
 
-      //Idempotency check (CRITICAL)
+      //  Always ObjectId
+      const userId = new mongoose.Types.ObjectId(session.metadata.userId);
+
+      // Idempotency check
       const alreadyExists = await Order.findOne({
         paymentId: session.payment_intent,
       });
@@ -203,41 +229,45 @@ export const webhookStripe = async (req, res) => {
         );
       }
 
-      //Fetch line items
+      //Fetch line items from Stripe
       const lineItems = await stripe.checkout.sessions.listLineItems(
         session.id
       );
-      //console.log(lineItems);
 
+      /**
+       * buildOrderItems(lineItems)
+       * should internally use Product model
+       * to resolve productId, name, price, quantity
+       */
       const items = await buildOrderItems(lineItems);
 
-      // Create ONE order document
-     const createdOrder = await Order.create({
-       userId: session.metadata.userId,
-       orderId: `ORD-${new mongoose.Types.ObjectId()}`,
-       paymentId: session.payment_intent,
-       payment_status: mapStripePaymentStatus(session.payment_status),
-       delivery_address: session.metadata.addressId,
-       items,
-       subTotalAmt: session.amount_subtotal / 100,
-       totalAmt: session.amount_total / 100,
-     });
+      // Create order
+      const createdOrder = await Order.create({
+        userId,
+        orderId: `ORD-${new mongoose.Types.ObjectId()}`,
+        paymentId: session.payment_intent,
+        payment_status: mapStripePaymentStatus(session.payment_status),
+        delivery_address: session.metadata.addressId,
+        items,
+        subTotalAmt: session.amount_subtotal / 100,
+        totalAmt: session.amount_total / 100,
+      });
 
-      // Clear cart
+      // Clear cart + update user
       await Promise.all([
-        User.findByIdAndUpdate(session.metadata.userId, {
+        User.findByIdAndUpdate(userId, {
           $push: { orderHistory: createdOrder._id },
+          $set: { shopping_cart: [] },
         }),
 
-        User.findByIdAndUpdate(session.metadata.userId, {
-          shopping_cart: [],
-        }),
+        // backward compatible delete (string + ObjectId)
         CartProduct.deleteMany({
-          userId: session.metadata.userId,
+          $or: [{ userId: userId }, { userId: userId.toString() }],
         }),
       ]);
     }
 
+    // Refund handling
     if (event.type === "charge.refunded") {
       const charge = event.data.object;
 
@@ -247,14 +277,14 @@ export const webhookStripe = async (req, res) => {
       );
     }
 
-
-    // Always acknowledge Stripe
+    //ALWAYS acknowledge Stripe
     return successResponse(res, "Webhook processed", { received: true }, 200);
-  } catch (error) {
-     console.error("Webhook processing error:", error);
-     return errorResponse(res, `Webhook failed: ${error.message}`, 500);
+  } catch (err) {
+    console.error(" Webhook processing error:", err);
+    return errorResponse(res, "Webhook processing failed", 500);
   }
 };
+
 
 
 export const getOrderDetailsController = async (req, res) => {
@@ -265,13 +295,16 @@ export const getOrderDetailsController = async (req, res) => {
       return errorResponse(res, "Unauthorized", 401);
     }
 
-    const orders = await Order.find({ userId })
+    const orders = await Order.find({
+      userId,
+      delivery_status: { $ne: "CANCELLED" }, //exclude cancelled orders
+    })
       .sort({ createdAt: -1 })
       .populate({
         path: "delivery_address",
-        select: "addressLine city state pincode country",
+        select: "address_line city state pincode country",
       })
-      .lean(); // faster & memory-efficient
+      .lean();
 
     return successResponse(res, "Order list fetched successfully", orders, 200);
   } catch (error) {
@@ -281,6 +314,52 @@ export const getOrderDetailsController = async (req, res) => {
 };
 
 
+export const cancelOrder = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { _id: orderId } = req.body;
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return errorResponse(res, "Unauthorized user", 401);
+    }
+
+    if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+      return errorResponse(res, "Invalid order id", 400);
+    }
+
+    // Find order belonging to user
+    const order = await Order.findOne({
+      _id: orderId,
+      userId,
+    });
+
+    if (!order) {
+      return errorResponse(res, "Order not found", 404);
+    }
+
+    // Prevent cancelling delivered orders
+    if (order.delivery_status === "DELIVERED") {
+      return errorResponse(res, "Delivered orders cannot be cancelled", 400);
+    }
+
+    // Update status instead of deleting
+    order.delivery_status = "CANCELLED";
+    order.payment_status =
+      order.payment_status === "SUCCESS" ? "REFUNDED" : "CANCELLED";
+
+    await order.save();
+
+    return successResponse(
+      res,
+      "Your order has been cancelled successfully",
+      order,
+      200
+    );
+  } catch (error) {
+    console.error("Cancel order error:", error);
+    return errorResponse(res, error.message || "Failed to cancel order", 500);
+  }
+};
 
 
 
