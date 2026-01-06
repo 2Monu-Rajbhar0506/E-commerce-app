@@ -340,7 +340,14 @@ export const searchProduct = async (req, res) => {
     const skip = (page - 1) * limit;
     const trimmedSearch = search.trim();
 
-    const query = trimmedSearch ? { $text: { $search: trimmedSearch } } : {};
+    const baseQuery = { isDeleted: false };
+
+    const query = trimmedSearch
+      ? {
+          ...baseQuery,
+          $text: { $search: trimmedSearch },
+        }
+      : baseQuery;
 
     const sort = trimmedSearch
       ? { score: { $meta: "textScore" }, createdAt: -1 }
@@ -353,9 +360,10 @@ export const searchProduct = async (req, res) => {
         .limit(limit)
         .populate("category subCategory")
         .lean(),
-      
+
       Product.countDocuments(query),
     ]);
+
 
     return successResponse(
       res,
