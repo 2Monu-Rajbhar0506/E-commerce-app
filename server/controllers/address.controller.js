@@ -19,32 +19,6 @@ export const addAddressController = async (req, res) => {
 
     const { address_line, city, state, pincode, country, mobile, is_active } = req.body;
 
-    // validation
-    if (
-      !address_line?.trim() ||
-      !city?.trim() ||
-      !state?.trim() ||
-      !country?.trim() ||
-      !pincode ||
-      !mobile
-    ) {
-      await session.abortTransaction();
-      session.endSession();
-      return errorResponse(res, "All address fields are required", 400);
-    }
-
-    if (!/^\d{6}$/.test(pincode)) {
-      await session.abortTransaction();
-      session.endSession();
-      return errorResponse(res, "Invalid pincode", 400);
-    }
-
-    if (!/^[6-9]\d{9}$/.test(mobile)) {
-      await session.abortTransaction();
-      session.endSession();
-      return errorResponse(res, "Invalid mobile number", 400);
-    }
-
     // create address
     const [address] = await Address.create(
       [
@@ -125,31 +99,7 @@ export const updateAddressController = async (req, res) => {
       is_active,
     } = req.body;
 
-    // validate address id
-    if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
-      return errorResponse(res, "Invalid address id", 400);
-    }
-
-    // validation
-    if (
-      !address_line?.trim() ||
-      !city?.trim() ||
-      !state?.trim() ||
-      !country?.trim() ||
-      !pincode ||
-      !mobile
-    ) {
-      return errorResponse(res, "All address fields are required", 400);
-    }
-
-    if (!/^\d{6}$/.test(pincode)) {
-      return errorResponse(res, "Invalid pincode", 400);
-    }
-
-    if (!/^[6-9]\d{9}$/.test(mobile)) {
-      return errorResponse(res, "Invalid mobile number", 400);
-    }
-
+    
     // update address (only if it belongs to user)
     const updatedAddress = await Address.findOneAndUpdate(
       { _id, userId },
@@ -197,9 +147,6 @@ export const deleteAddressController = async (req, res) => {
     }
 
     const { _id } = req.body;
-    if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
-      return errorResponse(res, "Invalid address id", 400);
-    }
 
     const deletedAddress = await Address.findOneAndDelete(
       { _id, userId },

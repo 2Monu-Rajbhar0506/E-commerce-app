@@ -1,6 +1,5 @@
 import CartProduct from "../models/cartProductModel.js";
 import User from "../models/userModel.js";
-import mongoose from "mongoose";
 import { errorResponse, successResponse } from "../utils/response.js";
 
 
@@ -13,16 +12,8 @@ export const addToCartItemController = async (req, res) => {
         //validations
         if (!userId) {
             return errorResponse(res, "Unauthorized", 401);
-        }
-
-        if (!productId) {
-            return errorResponse(res, "Product ID is required", 400);
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return errorResponse(res, "Invalid Product ID", 400);
-        }
-
+      }
+      
         //check existing cart item
         const existingCartItem = await CartProduct.findOne({
           userId,
@@ -102,19 +93,17 @@ export const updateCartItemQtyController = async (req, res) => {
         return errorResponse(res, "Unauthorized User", 401);
       }
 
-      if (!_id || typeof qty !== "number" || qty < 0) {
-        return errorResponse(
-          res,
-          "Provide valid _id and qty (qty must be >= 1)",
-          400
-        );
-      }
-
       // If qty = 0 → remove item
       if (qty === 0) {
-        await CartProduct.deleteOne({ _id, userId });
+        const deleted = await CartProduct.findOneAndDelete({ _id, userId });
+
+        if (!deleted) {
+          return errorResponse(res, "Cart item not found", 404);
+        }
+
         return successResponse(res, "Cart item removed", null, 200);
       }
+
 
       const updateCartItem = await CartProduct.findOneAndUpdate(
         { _id, userId },
@@ -128,7 +117,7 @@ export const updateCartItemQtyController = async (req, res) => {
 
       return successResponse(
         res,
-        "Item added successfully",
+        "Cart item updated successfully",
         updateCartItem,
         200
       );
@@ -144,15 +133,8 @@ export const incrementCartItemQtyController = async (req, res) => {
     const userId = req.userId;
     const { _id } = req.body;
 
-    //console.log(_id);
-    
-
     if (!userId) {
       return errorResponse(res, "Unauthorized user", 401);
-    }
-
-    if (!_id) {
-      return errorResponse(res, "Provide cart item _id", 400);
     }
 
     const updatedCartItem = await CartProduct.findOneAndUpdate(
@@ -162,7 +144,7 @@ export const incrementCartItemQtyController = async (req, res) => {
     ).populate("productId");
 
     if (!updatedCartItem) {
-      return errorResponse(res, "Cart item not found", 407);
+      return errorResponse(res, "Cart item not found", 404);
     }
 
     return successResponse(
@@ -185,10 +167,6 @@ export const decrementCartItemQtyController = async (req, res) => {
 
     if (!userId) {
       return errorResponse(res, "Unauthorized user", 401);
-    }
-
-    if (!_id) {
-      return errorResponse(res, "Provide cart item _id", 400);
     }
 
     const cartItem = await CartProduct.findOne({ _id, userId });

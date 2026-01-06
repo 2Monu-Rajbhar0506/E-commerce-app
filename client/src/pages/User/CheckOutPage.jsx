@@ -14,7 +14,7 @@ const CheckOutPage = () => {
   const { originalPrice, totalPrice, totalQty } = useGlobalContext();
   const cartItem = useSelector((state) => state.cartItem.items);
   const [openAddress, setOpenAddress] = useState(false);
-  const [selectAddress, setSelectAddress] = useState(0);
+  const [selectAddress, setSelectAddress] = useState(0);  //default is 0th index address
   const addressList = useSelector((state) => state.addresses.addressList);
   const navigate = useNavigate();
 

@@ -17,21 +17,6 @@ export const createProductController = async (req, res) => {
             more_details = {},
         } = req.body
         
-      if (
-        !name?.trim() ||
-        !image?.length ||
-        !category?.length ||
-        !subCategory?.length ||
-        !unit ||
-        price < 0 ||
-        !description?.trim()
-      ) {
-        return errorResponse(res, "Invalid or missing required fields", 400);
-      }
-
-        if ( price < 0 || stock < 0 || discount < 0) {
-          return errorResponse(res, "Invalid numeric values", 400);
-        }
 
         const existingProduct = await Product.findOne({ name });
         if (existingProduct) {
@@ -119,10 +104,6 @@ export const getProductController = async (req, res) => {
 export const getProductByCategory = async (req, res) => {
   try {
     const { categoryId, limit = 15 } = req.body;
-    
-    if (!categoryId || !mongoose.Types.ObjectId.isValid(categoryId)) {
-      errorResponse(res,"Invalid or missing Category Id",400)
-    }
 
     const products = await Product.find({
       category: { $in: [categoryId] }, // use $in only if category is array in schema
@@ -156,14 +137,6 @@ export const getProductByCategory = async (req, res) => {
 export const getProductByCategoryAndSubCategory = async (req, res) => {
   try {
     const { categoryId, subCategoryId, page = 1, limit = 10, } = req.body;
-
-    if (!categoryId || !subCategoryId) {
-      return errorResponse(res, "categorId and subCategoryId is required", 400);
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(categoryId) || !mongoose.Types.ObjectId.isValid(subCategoryId)) {
-      errorResponse(res, "Invalid categoryId or subCategoryId", 400);
-    }
 
     const pageNumber = Math.max(Number(page) || 1, 1);
     const limitNumber = Math.min(Number(limit) || 10, 50);

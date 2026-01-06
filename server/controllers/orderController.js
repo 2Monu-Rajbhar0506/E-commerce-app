@@ -12,9 +12,6 @@ export const CashOnDeliveryOrderController = async (req, res) => {
      const userId = req.userId;
      const { list_items, totalAmt, subTotalAmt, addressId } = req.body;
 
-     if (!list_items || list_items.length === 0) {
-       return errorResponse(res, "Cart is empty", 400);
-     }
      const paymentId = `PYD-${new mongoose.Types.ObjectId()}`;
 
      // build order items snapshot
@@ -72,6 +69,7 @@ export const paymentController = async (req, res) => {
       return errorResponse(res, "Unauthorized", 401);
     }
 
+    //for extra security keep it
     if (!Array.isArray(list_items) || list_items.length === 0) {
       return errorResponse(res, "Cart is empty", 400);
     }
@@ -323,9 +321,9 @@ export const cancelOrder = async (req, res) => {
       return errorResponse(res, "Unauthorized user", 401);
     }
 
-    if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
-      return errorResponse(res, "Invalid order id", 400);
-    }
+    // if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+    //   return errorResponse(res, "Invalid order id", 400);
+    // }
 
     // Find order belonging to user
     const order = await Order.findOne({
