@@ -5,6 +5,6 @@ import uploadImageController from "../controllers/uploadImageController.js";
 
 const uploadRouter = Router();
 
-uploadRouter.post("/upload", authUser, upload.single("image"),uploadImageController);
+uploadRouter.post("/upload", authUser, upload.single("image"), uploadImageController);
 
 export default uploadRouter; 

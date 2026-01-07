@@ -7,7 +7,7 @@ import { createProductSchema, getProductByCategoryAndSubCategorySchema, getProdu
 
 const productRouter = Router()
 
-productRouter.post("/create", authUser,  validate(createProductSchema), createProductController);
+productRouter.post("/create", authUser,  createProductController);
 productRouter.get("/get", getProductController);
 productRouter.post("/get-product-by-category", validate(getProductByCategorySchema),getProductByCategory);
 productRouter.post("/get-product-by-category-and-subCategory", validate(getProductByCategoryAndSubCategorySchema),getProductByCategoryAndSubCategory);
@@ -17,3 +17,4 @@ productRouter.delete("/delete-product/:productId", authUser, admin, deleteProduc
 productRouter.post("/search-product", searchProduct);
 
 export default productRouter;
+// validate(createProductSchema),

@@ -71,7 +71,7 @@ const Home = () => {
       </div>
 
       {/**for displaying categories */}
-      <div className="container mx-auto px-4 my-4 grid grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
+      <div className="container mx-auto px-4 my-4 grid grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-3">
         {loadingCategory
           ? Array.from({ length: 12 }).map((_, index) => (
               <div

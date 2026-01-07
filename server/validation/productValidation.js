@@ -61,11 +61,28 @@ export const objectIdSchema = z
     message: "Invalid ObjectId",
   });
 
-export const paginationSchema = {
+// export const paginationSchema = {
+//   page: z.coerce.number().min(1).optional(),
+//   limit: z.coerce.number().min(1).max(50).optional(),
+// };
+export const paginationSchema = z.object({
   page: z.coerce.number().min(1).optional(),
   limit: z.coerce.number().min(1).max(50).optional(),
-};
+});
 
+const moreDetailsSchema = z.preprocess((val) => {
+  if (!val) return undefined;
+
+  if (typeof val === "string") {
+    try {
+      return JSON.parse(val);
+    } catch {
+      return undefined;
+    }
+  }
+
+  return val;
+}, z.record(z.any()).optional());
 
 
 export const createProductSchema = z.object({
@@ -87,7 +104,8 @@ export const createProductSchema = z.object({
 
   description: z.string().trim().min(1, "Description is required"),
 
-  more_details: z.record(z.any()).optional(),
+  //more_details: z.record(z.any()).optional(),
+  more_details: moreDetailsSchema,
 });
 
 
